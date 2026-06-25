@@ -1138,8 +1138,8 @@ export default function App() {
                   <ShieldAlert className="w-8 h-8" />
                 </div>
                 <div className="text-left">
-                  <div className="text-base font-semibold text-blue-600">湖南省电影局</div>
-                  <div className="text-base font-medium text-blue-600">湖南省电影行业协会</div>
+                  <div className="text-lg font-semibold text-blue-600">湖南省电影局</div>
+                  <div className="text-lg font-medium text-blue-600">湖南省电影行业协会</div>
                 </div>
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">影院安全隐患举报</h1>
