@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  /* Fonts */
+  --font-sans: "Inter", system-ui, -apple-system, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --font-serif: "Noto Serif SC", serif;
+
+  /* Global Animations */
+  --animate-fade-in: fadeIn 0.4s ease-out forwards;
+  --animate-slide-up: slideUp 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+body {
+  background-color: #f9fafb; /* gray-50 */
+  color: #111827; /* gray-900 */
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scroll Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Form resets and basic styles applied via tailwind utilities */

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>影院隐患举报 - 管理后台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#333}
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
+.login-box{background:white;padding:40px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:360px;max-width:90vw}
+.login-box h1{font-size:22px;margin-bottom:8px;text-align:center}
+.login-box p{color:#666;font-size:14px;text-align:center;margin-bottom:24px}
+.login-box input{width:100%;padding:12px 16px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;outline:none;transition:border-color .2s}
+.login-box input:focus{border-color:#667eea}
+.login-box button{width:100%;padding:12px;background:#667eea;color:white;border:none;border-radius:10px;font-size:16px;cursor:pointer;margin-top:16px;transition:background .2s}
+.login-box button:hover{background:#5a6fd6}
+.login-error{color:#e74c3c;font-size:13px;text-align:center;margin-top:12px;display:none}
+.dashboard{display:none;max-width:1400px;margin:0 auto;padding:20px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:24px}
+.header-right{display:flex;align-items:center;gap:16px}
+.header-right button{padding:8px 16px;background:#e74c3c;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);text-align:center}
+.stat-card .num{font-size:28px;font-weight:bold;color:#667eea}
+.stat-card .label{font-size:13px;color:#666;margin-top:4px}
+.filters{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filters select,.filters input{padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none}
+.filters input{flex:1;min-width:200px}
+.filters button{padding:8px 20px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px}
+.table-wrap{background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#f8f9fa;padding:12px 16px;text-align:left;font-size:13px;color:#666;font-weight:600;white-space:nowrap}
+td{padding:12px 16px;font-size:14px;border-top:1px solid #f0f0f0}
+tr:hover{background:#f8f9fa}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.status-pending{background:#fff3cd;color:#856404}
+.status-reviewing{background:#cce5ff;color:#004085}
+.status-resolved{background:#d4edda;color:#155724}
+.status-invalid{background:#f8d7da;color:#721c24}
+.clickable{cursor:pointer;color:#667eea}
+.clickable:hover{text-decoration:underline}
+.pagination{display:flex;justify-content:center;align-items:center;gap:12px;padding:20px}
+.pagination button{padding:6px 14px;border:1px solid #ddd;border-radius:6px;background:white;cursor:pointer}
+.pagination button:disabled{opacity:.5;cursor:not-allowed}
+.pagination span{font-size:14px;color:#666}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal{background:white;border-radius:16px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;padding:32px;position:relative}
+.modal h2{font-size:20px;margin-bottom:20px}
+.modal .close-btn{position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#999}
+.modal .field{margin-bottom:12px}
+.modal .field-label{font-size:12px;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.modal .field-value{font-size:15px}
+.modal .photos-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.modal .photos-grid img{width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid #eee;cursor:pointer}
+.modal .hazard-item{padding:8px 12px;background:#f8f9fa;border-radius:8px;margin-bottom:6px;font-size:14px}
+.modal .status-select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-right:8px}
+.modal .save-btn{padding:8px 20px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px}
+.modal textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;min-height:60px;margin-top:8px}
+.loading{text-align:center;padding:40px;color:#999}
+.empty{text-align:center;padding:40px;color:#999}
+@media(max-width:768px){
+  .dashboard{padding:12px}
+  .filters{flex-direction:column}
+  .filters input{min-width:auto;width:100%}
+  .modal{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h1>🔒 管理后台</h1>
+    <p>影院隐患举报系统 · 数据管理</p>
+    <input type="text" id="usernameInput" placeholder="请输入用户名" style="margin-bottom:12px;" autocomplete="off">
+    <div style="display:flex;gap:0;">
+      <input type="password" id="passwordInput" placeholder="请输入管理密码" onkeydown="if(event.key==='Enter')login()" style="flex:1;border-top-right-radius:0;border-bottom-right-radius:0;" autocomplete="off">
+      <button id="togglePasswordBtn" type="button" onclick="togglePassword()" style="width:48px;flex-shrink:0;background:white;border:2px solid #e0e0e0;border-left:none;border-radius:0 10px 10px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#999;padding:0;margin:0;" title="显示密码">
+        <svg id="eyeOpenIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg id="eyeClosedIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>
+      </button>
+    </div>
+    <button id="loginBtn" onclick="login()">登录</button>
+    <div class="login-error" id="loginError">用户名或密码错误</div>
+  </div>
+</div>
+
+<div class="dashboard" id="dashboard">
+  <div class="header">
+    <h1>📋 举报数据管理</h1>
+    <div class="header-right">
+      <span id="totalCount" style="font-size:14px;color:#666;">共 0 条</span>
+      <button onclick="logout()">退出登录</button>
+    </div>
+  </div>
+  <div class="stats" id="statsContainer"></div>
+  <div class="filters">
+    <select id="filterCity" onchange="loadList()"><option value="">全部城市</option></select>
+    <select id="filterStatus" onchange="loadList()"><option value="">全部状态</option><option value="pending">待处理</option><option value="reviewing">处理中</option><option value="resolved">已解决</option><option value="invalid">无效</option></select>
+    <select id="filterSort" onchange="loadList()"><option value="newest">最新优先</option><option value="oldest">最早优先</option></select>
+    <input type="text" id="filterKeyword" placeholder="搜索影院/姓名/电话/ID..." onkeydown="if(event.key==='Enter')loadList()">
+    <button onclick="loadList()">🔍 搜索</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:30px;">置顶</th><th>ID</th><th>提交时间</th><th>影院名称</th><th>地区</th><th>举报人</th><th>状态</th><th>隐患数</th><th>照片数</th><th>操作</th><th style="width:60px;">删除</th></tr></thead>
+      <tbody id="tableBody"><tr><td colspan="11" class="loading">加载中...</td></tr></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <button class="close-btn" onclick="closeDetail()">&times;</button>
+    <h2 id="detailTitle">举报详情</h2>
+    <div id="detailContent"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="imagePreview" style="background:rgba(0,0,0,0.85);cursor:pointer;" onclick="this.style.display='none'">
+  <img id="previewImage" style="max-width:90vw;max-height:90vh;border-radius:8px;">
+</div>
+
+<script>
+var API_BASE = '';
+var CITIES = ['长沙市','株洲市','湘潭市','衡阳市','邵阳市','岳阳市','常德市','张家界市','益阳市','郴州市','永州市','怀化市','娄底市','湘西土家族苗族自治州'];
+var STATUS_LABELS = { pending:'待处理', reviewing:'处理中', resolved:'已解决', invalid:'无效' };
+var STATUS_COLORS = { pending:'#856404', reviewing:'#004085', resolved:'#155724', invalid:'#721c24' };
+var currentPage = 1;
+
+// ========== JWT Token Management ==========
+function getToken() {
+  return localStorage.getItem('admin_token') || '';
+}
+function setToken(token) {
+  localStorage.setItem('admin_token', token);
+}
+function clearToken() {
+  localStorage.removeItem('admin_token');
+}
+
+// ========== Unified API Request ==========
+function apiRequest(url, options) {
+  options = options || {};
+  var headers = options.headers || {};
+  var token = getToken();
+  if (token) {
+    headers['Authorization'] = 'Bearer ' + token;
+  }
+  if (options.body && typeof options.body === 'string') {
+    headers['Content-Type'] = 'application/json';
+  }
+  options.headers = headers;
+  return fetch(API_BASE + url, options).then(function(r) {
+    if (r.status === 401 || r.status === 403) {
+      clearToken();
+      showLogin();
+      throw new Error('登录已过期，请重新登录');
+    }
+    return r.json();
+  });
+}
+
+// ========== Parse helpers for JSON fields ==========
+function parseJsonField(val, fallback) {
+  if (val == null) return fallback;
+  if (typeof val === 'string') {
+    try { return JSON.parse(val); } catch(e) { return fallback; }
+  }
+  return val;
+}
+
+function getHazardCount(hazards) {
+  var h = parseJsonField(hazards, {});
+  if (typeof h === 'object' && !Array.isArray(h)) {
+    return Object.values(h).filter(function(v) { return v && v.checked; }).length;
+  }
+  if (Array.isArray(h)) {
+    return h.filter(function(v) { return v && v.checked; }).length;
+  }
+  return 0;
+}
+
+function mapOrArrayToArr(val) {
+  var v = parseJsonField(val, []);
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'object' && v !== null) return Object.values(v);
+  return [];
+}
+
+// photos/othersPhotos: Map<String,String> (key=filename, value=URL) or array of objects/strings
+function photosToUrlArray(val) {
+  var v = parseJsonField(val, {});
+  if (Array.isArray(v)) {
+    return v.map(function(p) { return typeof p === 'string' ? p : (p.url || p.src || ''); });
+  }
+  if (typeof v === 'object' && v !== null) {
+    // Map<String,String>: values are URLs directly
+    return Object.values(v).map(function(p) { return typeof p === 'string' ? p : (p.url || p.src || ''); });
+  }
+  return [];
+}
+
+function getPhotoCount(photos, othersPhotos) {
+  return photosToUrlArray(photos).length + photosToUrlArray(othersPhotos).length;
+}
+
+function formatTimestamp(ts) {
+  if (!ts) return '';
+  if (typeof ts === 'string') {
+    // Handle ISO format or "yyyy-MM-dd HH:mm:ss"
+    return ts.replace('T', ' ').substring(0, 19);
+  }
+  if (Array.isArray(ts)) {
+    // Handle [year,month,day,hour,minute,second]
+    var d = new Date(ts[0], ts[1]-1, ts[2], ts[3]||0, ts[4]||0, ts[5]||0);
+    return d.toLocaleString('zh-CN');
+  }
+  return String(ts);
+}
+
+// ========== UI Functions ==========
+function togglePassword() {
+  var input = document.getElementById('passwordInput');
+  var o = document.getElementById('eyeOpenIcon');
+  var c = document.getElementById('eyeClosedIcon');
+  if (input.type === 'password') { input.type = 'text'; o.style.display = 'none'; c.style.display = 'block'; }
+  else { input.type = 'password'; o.style.display = 'block'; c.style.display = 'none'; }
+}
+
+function showLogin() {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function showDashboard() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+function login() {
+  var username = document.getElementById('usernameInput').value.trim();
+  var pwd = document.getElementById('passwordInput').value;
+  if (!username || !pwd) {
+    document.getElementById('loginError').textContent = '请输入用户名和密码';
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+  var loginBtn = document.getElementById('loginBtn');
+  var originalText = loginBtn.textContent;
+  loginBtn.textContent = '验证中...';
+  loginBtn.disabled = true;
+  document.getElementById('loginError').style.display = 'none';
+  fetch(API_BASE + '/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: username, password: pwd })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success && data.token) {
+      setToken(data.token);
+      showDashboard();
+      initCities(); loadStats(); document.getElementById('filterKeyword').value = ''; currentPage = 1; loadList();
+    } else {
+      throw new Error(data.message || '登录失败');
+    }
+    loginBtn.textContent = originalText; loginBtn.disabled = false;
+  })
+  .catch(function(err) {
+    var errEl = document.getElementById('loginError');
+    errEl.textContent = err.message || '用户名或密码错误';
+    errEl.style.display = 'block';
+    loginBtn.textContent = originalText; loginBtn.disabled = false;
+  });
+}
+
+function logout() {
+  clearToken();
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('usernameInput').value = '';
+  document.getElementById('passwordInput').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+// ========== Data Loading ==========
+function initCities() {
+  var sel = document.getElementById('filterCity');
+  if (sel.options.length > 1) return; // already initialized
+  CITIES.forEach(function(c) { var opt = document.createElement('option'); opt.value = c; opt.textContent = c; sel.appendChild(opt); });
+}
+
+function loadStats() {
+  apiRequest('/api/stats')
+  .then(function(data) {
+    if (data.error || data.message && !data.total) throw new Error(data.error || data.message);
+    var container = document.getElementById('statsContainer');
+    var html = '<div class="stat-card"><div class="num">' + data.total + '</div><div class="label">总计</div></div>';
+    var byStatus = data.byStatus || {};
+    for (var key in STATUS_LABELS) {
+      html += '<div class="stat-card"><div class="num" style="color:' + STATUS_COLORS[key] + '">' + (byStatus[key] || 0) + '</div><div class="label">' + STATUS_LABELS[key] + '</div></div>';
+    }
+    container.innerHTML = html;
+    document.getElementById('totalCount').textContent = '共 ' + data.total + ' 条';
+  })
+  .catch(function(err) { document.getElementById('statsContainer').innerHTML = '<div class="stat-card"><div class="num" style="color:#e74c3c">!</div><div class="label">加载失败</div></div>'; });
+}
+
+function loadList() {
+  var params = new URLSearchParams({
+    page: currentPage - 1, pageSize: 20,
+    sort: document.getElementById('filterSort').value,
+    city: document.getElementById('filterCity').value,
+    status: document.getElementById('filterStatus').value,
+    keyword: document.getElementById('filterKeyword').value
+  });
+  apiRequest('/api/list?' + params.toString())
+  .then(function(data) {
+    if (data.error) throw new Error(data.error);
+    renderTable(data); renderPagination(data);
+  })
+  .catch(function(err) { document.getElementById('tableBody').innerHTML = '<tr><td colspan="11" class="empty" style="color:#e74c3c">数据加载失败</td></tr>'; });
+}
+
+function renderTable(data) {
+  var tbody = document.getElementById('tableBody');
+  if (!data.list || data.list.length === 0) { tbody.innerHTML = '<tr><td colspan="11" class="empty">暂无数据</td></tr>'; return; }
+  var esc = function(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g, "&#39;").replace(/"/g, "&quot;"); };
+  tbody.innerHTML = data.list.map(function(item) {
+    var hazardCount = item.hazardCount != null ? item.hazardCount : getHazardCount(item.hazards);
+    var photoCount = item.photoCount != null ? item.photoCount : getPhotoCount(item.photos, item.othersPhotos);
+    return '<tr data-id="' + esc(item.id) + '">' +
+      '<td style="text-align:center;">' + (item.isPinned ? '<span class="pin-badge" style="cursor:pointer;font-size:16px;" title="取消置顶" onclick="togglePin(\'' + esc(item.id) + '\')">📌</span>' : '<span class="pin-btn" style="cursor:pointer;font-size:14px;color:#999;opacity:0.5;" title="置顶" onclick="togglePin(\'' + esc(item.id) + '\')">📍</span>') + '</td>' +
+      '<td class="clickable" title="' + esc(item.id) + '" onclick="openDetail(\'' + esc(item.id) + '\')">' + esc(item.id.substring(0, 12)) + '...</td>' +
+      '<td>' + formatTimestamp(item.timestamp) + '</td>' +
+      '<td>' + esc(item.cinemaName) + '</td>' +
+      '<td>' + esc(item.selectedCity) + (item.selectedCounty ? ' · ' + esc(item.selectedCounty) : '') + '</td>' +
+      '<td>' + esc(item.reporterName) + (item.reporterTitle ? ' ' + esc(item.reporterTitle) : '') + '</td>' +
+      '<td><span class="status-badge status-' + item.status + '">' + (STATUS_LABELS[item.status] || item.status) + '</span></td>' +
+      '<td>' + hazardCount + '</td>' +
+      '<td>' + photoCount + '</td>' +
+      '<td><button class="clickable" style="background:none;border:none;font-size:13px;cursor:pointer;color:#667eea;" onclick="openDetail(\'' + esc(item.id) + '\')">查看详情</button></td>' +
+      '<td style="text-align:center;"><button style="background:none;border:none;font-size:16px;cursor:pointer;color:#e74c3c;opacity:0.6;" title="删除" onclick="deleteSubmission(\'' + esc(item.id) + '\')">🗑️</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderPagination(data) {
+  var totalPages = Math.ceil(data.total / data.pageSize) || 1;
+  var currentDisplayPage = (data.page || 0) + 1;
+  document.getElementById('pagination').innerHTML =
+    '<button onclick="goPage(' + (currentPage - 1) + ')" ' + (currentPage <= 1 ? 'disabled' : '') + '>上一页</button>' +
+    '<span>第 ' + currentDisplayPage + ' / ' + totalPages + ' 页（共 ' + data.total + ' 条）</span>' +
+    '<button onclick="goPage(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages ? 'disabled' : '') + '>下一页</button>';
+}
+
+function goPage(page) { if (page < 1) return; currentPage = page; loadList(); }
+
+// ========== Actions ==========
+function togglePin(id) {
+  apiRequest('/api/pin', {
+    method: 'POST',
+    body: JSON.stringify({ id: id })
+  })
+  .then(function(data) { if (data.success) { loadStats(); loadList(); } else alert('操作失败：' + (data.message || data.error || '未知错误')); })
+  .catch(function(err) { alert('操作失败: ' + err.message); });
+}
+
+function deleteSubmission(id) {
+  if (!confirm('确定要删除此报告单吗？此操作不可恢复！')) return;
+  apiRequest('/api/delete', {
+    method: 'DELETE',
+    body: JSON.stringify({ id: id })
+  })
+  .then(function(data) { if (data.success) { alert('删除成功！'); loadStats(); loadList(); } else alert('删除失败：' + (data.message || data.error || '未知错误')); })
+  .catch(function(err) { alert('删除失败: ' + err.message); });
+}
+
+function openDetail(id) {
+  apiRequest('/api/detail?id=' + encodeURIComponent(id))
+  .then(function(data) {
+    if (data.error) { alert(data.error); return; }
+    renderDetail(data);
+    document.getElementById('detailModal').style.display = 'flex';
+  })
+  .catch(function(err) { alert('加载详情失败: ' + err.message); });
+}
+
+function closeDetail() { document.getElementById('detailModal').style.display = 'none'; }
+
+function previewImage(src) {
+  document.getElementById('previewImage').src = src;
+  document.getElementById('imagePreview').style.display = 'flex';
+}
+
+function renderDetail(data) {
+  var container = document.getElementById('detailContent');
+  var hazards = parseJsonField(data.hazards, {});
+  var checkedHazards = [];
+  if (typeof hazards === 'object' && !Array.isArray(hazards)) {
+    checkedHazards = Object.entries(hazards).filter(function(e) { return e[1] && e[1].checked; });
+  }
+  var esc = function(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g, "&#39;").replace(/"/g, "&quot;"); };
+  var hazardsHtml = '';
+  if (checkedHazards.length > 0) hazardsHtml = checkedHazards.map(function(e) { return '<div class="hazard-item">✅ 隐患 #' + esc(e[0]) + '</div>'; }).join('');
+  if (data.othersText) hazardsHtml += '<div class="hazard-item">📝 备注：' + esc(data.othersText) + '</div>';
+
+  var photos = photosToUrlArray(data.photos);
+  var othersPhotos = photosToUrlArray(data.othersPhotos);
+  var allPhotos = photos.concat(othersPhotos);
+  var photosHtml = '';
+  if (allPhotos.length > 0) photosHtml = '<div class="photos-grid">' + allPhotos.map(function(url) {
+    return '<img src="' + esc(url) + '" onclick="previewImage(this.src)">';
+  }).join('') + '</div>';
+
+  container.innerHTML =
+    '<div class="field"><div class="field-label">ID</div><div class="field-value">' + esc(data.id) + '</div></div>' +
+    '<div class="field"><div class="field-label">提交时间</div><div class="field-value">' + formatTimestamp(data.timestamp) + '</div></div>' +
+    '<div class="field"><div class="field-label">举报人</div><div class="field-value">' + esc(data.reporterName) + (data.reporterTitle ? ' ' + esc(data.reporterTitle) : '') + '</div></div>' +
+    '<div class="field"><div class="field-label">手机号</div><div class="field-value">' + esc(data.reporterPhone) + '</div></div>' +
+    '<div class="field"><div class="field-label">地区</div><div class="field-value">' + esc(data.selectedCity) + ' · ' + esc(data.selectedCounty || '未选择') + '</div></div>' +
+    '<div class="field"><div class="field-label">影院</div><div class="field-value">' + esc(data.cinemaName) + '</div></div>' +
+    '<div class="field"><div class="field-label">隐患项目</div>' + (hazardsHtml || '<div class="field-value">无</div>') + '</div>' +
+    '<div class="field"><div class="field-label">照片 (' + allPhotos.length + '张)</div>' + (photosHtml || '<div class="field-value">无</div>') + '</div>' +
+    '<div class="field" style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">' +
+      '<div class="field-label">处理状态</div>' +
+      '<select class="status-select" id="detailStatus">' +
+        '<option value="pending"' + (data.status === 'pending' ? ' selected' : '') + '>待处理</option>' +
+        '<option value="reviewing"' + (data.status === 'reviewing' ? ' selected' : '') + '>处理中</option>' +
+        '<option value="resolved"' + (data.status === 'resolved' ? ' selected' : '') + '>已解决</option>' +
+        '<option value="invalid"' + (data.status === 'invalid' ? ' selected' : '') + '>无效</option>' +
+      '</select>' +
+      '<button class="save-btn" onclick="saveStatus(\'' + esc(data.id) + '\')">保存</button>' +
+    '</div>' +
+    '<div class="field"><div class="field-label">备注</div><textarea id="detailNote">' + esc(data.note || '') + '</textarea></div>' +
+    '<div class="field"><div class="field-label">奖励金额 (元)</div><input type="number" id="detailReward" value="' + (data.rewardAmount || 0) + '" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:120px;"></div>';
+
+  document.getElementById('detailTitle').textContent = '举报详情 - ' + data.cinemaName;
+}
+
+function saveStatus(id) {
+  var status = document.getElementById('detailStatus').value;
+  var note = document.getElementById('detailNote').value;
+  var rewardAmount = parseInt(document.getElementById('detailReward').value) || 0;
+  apiRequest('/api/status', {
+    method: 'POST',
+    body: JSON.stringify({ id: id, status: status, note: note, rewardAmount: rewardAmount })
+  })
+  .then(function(data) {
+    if (data.success) { alert('保存成功！'); closeDetail(); loadStats(); loadList(); }
+    else alert('保存失败：' + (data.message || data.error || '未知错误'));
+  })
+  .catch(function(err) { alert('保存失败: ' + err.message); });
+}
+
+// ========== Auto-login on page load ==========
+(function() {
+  var token = getToken();
+  if (token) {
+    showDashboard();
+    initCities();
+    loadStats();
+    currentPage = 1;
+    loadList();
+  } else {
+    showLogin();
+  }
+})();
+</script>
+</body>
+</html>
