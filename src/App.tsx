@@ -1134,13 +1134,11 @@ export default function App() {
           >
             <div className="p-8 md:p-12 text-center">
               <div className="flex items-center justify-center gap-4 mb-6">
-                <div className="text-right">
-                  <div className="text-base font-semibold text-blue-600">湖南省电影局</div>
-                </div>
                 <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center transform -rotate-3">
                   <ShieldAlert className="w-8 h-8" />
                 </div>
                 <div className="text-left">
+                  <div className="text-base font-semibold text-blue-600">湖南省电影局</div>
                   <div className="text-base font-medium text-blue-600">湖南省电影行业协会</div>
                 </div>
               </div>
