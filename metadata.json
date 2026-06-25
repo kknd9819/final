@@ -1,0 +1,6 @@
+{
+  "name": "湖南电影安全隐患举报问卷",
+  "description": "影院安全隐患有奖举报用户调研问卷，精美复古湖湘胶片美学风格",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
