@@ -12,7 +12,9 @@ import {
   AlertCircle,
   FileSpreadsheet,
   ChevronDown,
-  Info
+  Info,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 import { HUNAN_REGIONS } from './data/hunanRegions';
@@ -94,6 +96,26 @@ export default function App() {
 
   const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('hunan_cinema_survey_dark_mode');
+    return saved === 'true';
+  });
+
+  // Apply dark mode class to html element
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('hunan_cinema_survey_dark_mode', String(darkMode));
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => !prev);
+  };
 
   // Load persisted submissions from localStorage
   useEffect(() => {
@@ -1021,7 +1043,7 @@ export default function App() {
     }
   };
 
-  const handleDeleteStub = async (id: string) => {
+  const handleDeleteStub = async (id: number) => {
     // 同步删除后端数据
     try {
       await fetchWithTimeout(`${API_BASE}/api/delete-by-user`, {
@@ -1048,20 +1070,34 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24">
+    <div className={`min-h-screen pb-24 transition-colors duration-300 ${
+        darkMode 
+          ? 'bg-gray-900 text-gray-100' 
+          : 'bg-gray-50 text-gray-900'
+      }`}>
       
       {/* 极简顶导栏 */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 sm:px-6 shadow-sm">
+      <header className={`sticky top-0 z-40 h-16 flex items-center justify-between px-4 sm:px-6 shadow-sm transition-colors duration-300 ${
+          darkMode 
+            ? 'bg-gray-800 border-b border-gray-700' 
+            : 'bg-white border-b border-gray-200'
+        }`}>
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-blue-600 flex-shrink-0" />
-          <h1 className="text-lg font-semibold tracking-tight text-gray-900 select-none">影院安全隐患举报</h1>
+          <h1 className={`text-lg font-semibold tracking-tight select-none transition-colors duration-300 ${
+            darkMode ? 'text-gray-100' : 'text-gray-900'
+          }`}>影院安全隐患举报</h1>
         </div>
 
         <div className="hidden sm:block flex-1 max-w-md mx-8">
           {currentStep > 0 && currentStep < 3 && (
             <div className="flex items-center gap-3 w-full">
-              <span className="text-xs text-gray-500 min-w-max font-medium">当前进度</span>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+              <span className={`text-xs min-w-max font-medium transition-colors duration-300 ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>当前进度</span>
+              <div className={`w-full h-2 rounded-full overflow-hidden transition-colors duration-300 ${
+                darkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
                 <div 
                   className="h-full bg-blue-500 transition-all duration-500 ease-out"
                   style={{ width: `${getProgressPercent()}%` }}
@@ -1071,11 +1107,35 @@ export default function App() {
           )}
         </div>
 
-        <div>
+        <div className="flex items-center gap-3">
+          {/* Dark/Light Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            style={{ backgroundColor: darkMode ? '#3b82f6' : '#d1d5db' }}
+            aria-label={darkMode ? '切换到亮色模式' : '切换到暗色模式'}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm flex items-center justify-center transition-transform duration-300 ${
+                darkMode ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            >
+              {darkMode ? (
+                <Moon className="w-3 h-3 text-blue-600" />
+              ) : (
+                <Sun className="w-3 h-3 text-amber-500" />
+              )}
+            </span>
+          </button>
+
           {submissions.length > 0 && (
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="px-3.5 py-2 flex items-center gap-2 text-sm text-gray-700 font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+              className={`px-3.5 py-2 flex items-center gap-2 text-sm font-medium rounded-lg transition-colors shadow-sm ${
+                darkMode 
+                  ? 'text-gray-300 bg-gray-700 border border-gray-600 hover:bg-gray-600' 
+                  : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'
+              }`}
             >
               <FileSpreadsheet className="w-4 h-4 text-blue-600" />
               <span>历史记录 ({submissions.length})</span>
@@ -1085,7 +1145,9 @@ export default function App() {
       </header>
 
       {/* 移动端顶导进度条补偿 */}
-      <div className="h-1 w-full bg-gray-100 sm:hidden">
+      <div className={`h-1 w-full sm:hidden transition-colors duration-300 ${
+          darkMode ? 'bg-gray-700' : 'bg-gray-100'
+        }`}>
         <div 
           className="h-full bg-blue-500 transition-all duration-300"
           style={{ width: `${getProgressPercent()}%` }}
@@ -1098,7 +1160,11 @@ export default function App() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-gray-900/95 backdrop-blur shadow-xl text-white px-5 py-3.5 rounded-xl flex items-center gap-3 text-sm max-w-md w-[85%]"
+            className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 backdrop-blur shadow-xl px-5 py-3.5 rounded-xl flex items-center gap-3 text-sm max-w-md w-[85%] transition-colors duration-300 ${
+              darkMode 
+                ? 'bg-gray-800/95 text-gray-100 border border-gray-700' 
+                : 'bg-gray-900/95 text-white'
+            }`}
           >
             <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />
             <span className="font-medium">{toastMessage}</span>
@@ -1130,11 +1196,17 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
+            className={`rounded-2xl shadow-sm border overflow-hidden transition-colors duration-300 ${
+              darkMode 
+                ? 'bg-gray-800 border-gray-700' 
+                : 'bg-white border-gray-200'
+            }`}
           >
             <div className="p-8 md:p-12 text-center">
               <div className="flex items-center justify-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center transform -rotate-3">
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transform -rotate-3 transition-colors duration-300 ${
+                  darkMode ? 'bg-blue-900/50 text-blue-400' : 'bg-blue-50 text-blue-600'
+                }`}>
                   <ShieldAlert className="w-8 h-8" />
                 </div>
                 <div className="text-left">
@@ -1142,15 +1214,27 @@ export default function App() {
                   <div className="text-lg font-medium text-blue-600">湖南省电影行业协会</div>
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">影院安全隐患举报</h1>
-              <p className="text-gray-500 leading-relaxed max-w-lg mx-auto mb-8">
+              <h1 className={`text-3xl font-bold mb-4 tracking-tight transition-colors duration-300 ${
+                darkMode ? 'text-gray-100' : 'text-gray-900'
+              }`}>影院安全隐患举报</h1>
+              <p className={`leading-relaxed max-w-lg mx-auto mb-8 transition-colors duration-300 ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 欢迎参与影院公共安全共治活动。用十秒钟记录并扫除身边的隐患盲点，核实有效的首发举报可获得 <span className="font-semibold text-blue-600">￥100元现金感谢金</span>。
               </p>
 
-              <div className="bg-gray-50 rounded-xl p-5 mb-10 text-left border border-gray-100 flex gap-3 text-sm text-gray-600 leading-relaxed shadow-inner">
-                <Info className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+              <div className={`rounded-xl p-5 mb-10 text-left border flex gap-3 text-sm leading-relaxed shadow-inner transition-colors duration-300 ${
+                darkMode 
+                  ? 'bg-gray-700/50 border-gray-600 text-gray-300' 
+                  : 'bg-gray-50 border-gray-100 text-gray-600'
+              }`}>
+                <Info className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                  darkMode ? 'text-gray-500' : 'text-gray-400'
+                }`} />
                 <div>
-                  <strong className="text-gray-900 block mb-1">隐私保密声明</strong>
+                  <strong className={`block mb-1 transition-colors duration-300 ${
+                    darkMode ? 'text-gray-200' : 'text-gray-900'
+                  }`}>隐私保密声明</strong>
                   所有举报人的实名制信息与现场存证照片我们将做极其严格的保密与脱敏加密处理。仅做验证、发奖之用，请放心填报。
                 </div>
               </div>
@@ -1174,17 +1258,27 @@ export default function App() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-10"
+            className={`rounded-2xl shadow-sm border p-6 md:p-10 transition-colors duration-300 ${
+              darkMode 
+                ? 'bg-gray-800 border-gray-700' 
+                : 'bg-white border-gray-200'
+            }`}
           >
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">联络人与影院归属</h2>
-              <p className="text-gray-500 mt-2 text-sm">此信息严格保密，仅用于隐患核查反馈及奖励的及时送达。</p>
+              <h2 className={`text-2xl font-bold transition-colors duration-300 ${
+                darkMode ? 'text-gray-100' : 'text-gray-900'
+              }`}>联络人与影院归属</h2>
+              <p className={`mt-2 text-sm transition-colors duration-300 ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>此信息严格保密，仅用于隐患核查反馈及奖励的及时送达。</p>
             </div>
 
             <div className="space-y-7">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2.5">
-                  <label className="text-sm font-medium text-gray-900 flex items-center gap-1">
+                  <label className={`text-sm font-medium flex items-center gap-1 transition-colors duration-300 ${
+                    darkMode ? 'text-gray-200' : 'text-gray-900'
+                  }`}>
                     怎么称呼您？ <span className="text-red-500">*</span>
                   </label>
                   <div className="flex gap-2">
@@ -1196,9 +1290,15 @@ export default function App() {
                         setState(prev => ({ ...prev, reporterName: e.target.value }));
                         if (nameError) setNameError('');
                       }}
-                      className="flex-1 w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-gray-400 text-sm"
+                      className={`flex-1 w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm ${
+                        darkMode 
+                          ? 'bg-gray-700 border border-gray-600 text-gray-100 placeholder:text-gray-500' 
+                          : 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400'
+                      }`}
                     />
-                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                    <div className={`flex p-1 rounded-xl transition-colors duration-300 ${
+                      darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}>
                       {['先生', '女士'].map((title) => (
                         <button
                           key={title}
@@ -1206,7 +1306,9 @@ export default function App() {
                           className={`px-4 py-1.5 text-sm rounded-lg transition-colors font-medium ${
                             state.reporterTitle === title
                               ? 'bg-indigo-600 text-white shadow-sm border border-indigo-600'
-                              : 'text-gray-500 hover:text-gray-700'
+                              : darkMode 
+                                ? 'text-gray-400 hover:text-gray-200' 
+                                : 'text-gray-500 hover:text-gray-700'
                           }`}
                         >
                           {title}
@@ -1218,7 +1320,9 @@ export default function App() {
                 </div>
 
                 <div className="space-y-2.5">
-                  <label className="text-sm font-medium text-gray-900 flex items-center gap-1">
+                  <label className={`text-sm font-medium flex items-center gap-1 transition-colors duration-300 ${
+                    darkMode ? 'text-gray-200' : 'text-gray-900'
+                  }`}>
                     手机号码 <span className="text-red-500">*</span>
                   </label>
                   <input 
@@ -1227,14 +1331,20 @@ export default function App() {
                     placeholder="请输入11位联络方式"
                     value={state.reporterPhone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-gray-400 text-sm"
+                    className={`w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm ${
+                      darkMode 
+                        ? 'bg-gray-700 border border-gray-600 text-gray-100 placeholder:text-gray-500' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400'
+                    }`}
                   />
                   {phoneError && <p className="text-xs font-medium text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="w-3.5 h-3.5" /> {phoneError}</p>}
                 </div>
               </div>
 
               <div className="space-y-3 pt-2">
-                <label className="text-sm font-medium text-gray-900 flex items-center gap-1">
+                <label className={`text-sm font-medium flex items-center gap-1 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-900'
+                }`}>
                   所在市县定位 <span className="text-red-500">*</span>
                 </label>
 
@@ -1246,7 +1356,11 @@ export default function App() {
                         setState(prev => ({ ...prev, selectedCity: e.target.value, selectedCounty: '' }));
                         setCityError('');
                       }}
-                      className="w-full appearance-none bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+                      className={`w-full appearance-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm ${
+                        darkMode 
+                          ? 'bg-gray-700 border border-gray-600 text-gray-100' 
+                          : 'bg-white border border-gray-300 text-gray-900'
+                      }`}
                     >
                       <option value="">省辖市级选择</option>
                       {HUNAN_REGIONS.map((region) => (
@@ -1264,7 +1378,11 @@ export default function App() {
                         setState(prev => ({ ...prev, selectedCounty: e.target.value }));
                         setCityError('');
                       }}
-                      className="w-full appearance-none bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400 text-sm"
+                      className={`w-full appearance-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm ${
+                        darkMode 
+                          ? 'bg-gray-700 border border-gray-600 text-gray-100 disabled:bg-gray-800 disabled:text-gray-500' 
+                          : 'bg-white border border-gray-300 text-gray-900 disabled:bg-gray-50 disabled:text-gray-400'
+                      }`}
                     >
                       <option value="">县辖区级选择</option>
                       {state.selectedCity && 
@@ -1277,14 +1395,24 @@ export default function App() {
                   </div>
                 </div>
                 {cityError && <p className="text-xs font-medium text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="w-3.5 h-3.5" /> {cityError}</p>}
-                {gpsSuccess && <p className="text-xs font-medium text-green-600 flex items-center gap-1.5 mt-1 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100 w-fit"><Check className="w-4 h-4" /> {gpsSuccess}</p>}
+                {gpsSuccess && <p className={`text-xs font-medium flex items-center gap-1.5 mt-1 px-3 py-1.5 rounded-lg border w-fit transition-colors duration-300 ${
+                  darkMode 
+                    ? 'text-green-400 bg-green-900/30 border-green-800' 
+                    : 'text-green-600 bg-green-50 border-green-100'
+                }`}><Check className="w-4 h-4" /> {gpsSuccess}</p>}
                 {gpsDebug && !gpsSuccess && (
-                  <pre className="text-[11px] text-gray-500 mt-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 whitespace-pre-wrap font-mono">{gpsDebug}</pre>
+                  <pre className={`text-[11px] mt-2 rounded-lg px-3 py-2 whitespace-pre-wrap font-mono transition-colors duration-300 ${
+                    darkMode 
+                      ? 'text-gray-400 bg-gray-700 border border-gray-600' 
+                      : 'text-gray-500 bg-gray-50 border border-gray-200'
+                  }`}>{gpsDebug}</pre>
                 )}
               </div>
 
               <div className="space-y-2.5 pt-2">
-                <label className="text-sm font-medium text-gray-900 flex items-center gap-1">
+                <label className={`text-sm font-medium flex items-center gap-1 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-900'
+                }`}>
                   隐患发生具体影院名字 <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -1297,17 +1425,27 @@ export default function App() {
                       setState(prev => ({ ...prev, cinemaName: e.target.value }));
                       if (cinemaError) setCinemaError('');
                     }}
-                    className="w-full bg-white border border-gray-300 rounded-xl pl-11 pr-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-gray-400 text-sm"
+                    className={`w-full rounded-xl pl-11 pr-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm ${
+                      darkMode 
+                        ? 'bg-gray-700 border border-gray-600 text-gray-100 placeholder:text-gray-500' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400'
+                    }`}
                   />
                 </div>
                 {cinemaError && <p className="text-xs font-medium text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="w-3.5 h-3.5" /> {cinemaError}</p>}
               </div>
             </div>
 
-            <div className="mt-10 flex justify-between items-center pt-6 border-t border-gray-100">
+            <div className={`mt-10 flex justify-between items-center pt-6 border-t transition-colors duration-300 ${
+              darkMode ? 'border-gray-700' : 'border-gray-100'
+            }`}>
               <button
                 onClick={() => setCurrentStep(0)}
-                className="px-5 py-2.5 text-gray-500 hover:text-gray-900 font-medium transition-colors flex items-center gap-1.5 hover:bg-gray-50 rounded-xl text-sm"
+                className={`px-5 py-2.5 font-medium transition-colors flex items-center gap-1.5 rounded-xl text-sm ${
+                  darkMode 
+                    ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                }`}
               >
                 <ChevronLeft className="w-4 h-4" /> 退回主页
               </button>
@@ -1329,10 +1467,18 @@ export default function App() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-10">
+            <div className={`rounded-2xl shadow-sm border p-6 md:p-10 transition-colors duration-300 ${
+              darkMode 
+                ? 'bg-gray-800 border-gray-700' 
+                : 'bg-white border-gray-200'
+            }`}>
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900">对照核验并录入隐患</h2>
-                <p className="text-gray-500 mt-2 text-sm">核验单列表，勾选符合现场实际情况的问题条目。</p>
+                <h2 className={`text-2xl font-bold transition-colors duration-300 ${
+                  darkMode ? 'text-gray-100' : 'text-gray-900'
+                }`}>对照核验并录入隐患</h2>
+                <p className={`mt-2 text-sm transition-colors duration-300 ${
+                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>核验单列表，勾选符合现场实际情况的问题条目。</p>
               </div>
 
               <div className="space-y-4">
@@ -1345,7 +1491,9 @@ export default function App() {
                       className={`border rounded-xl transition-all duration-300 ${
                         questionState.checked 
                           ? 'border-blue-500 bg-blue-50/50 shadow-sm' 
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          : darkMode
+                            ? 'border-gray-600 hover:border-gray-500 bg-gray-800'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                     >
                       <div className="p-5 flex items-start gap-4">
@@ -1366,8 +1514,12 @@ export default function App() {
                         </button>
 
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-[15px] text-gray-900 mb-1">{def.label}</h4>
-                          <p className="text-sm text-gray-500 leading-relaxed max-w-lg">{def.details}</p>
+                          <h4 className={`font-semibold text-[15px] mb-1 transition-colors duration-300 ${
+                            darkMode ? 'text-gray-100' : 'text-gray-900'
+                          }`}>{def.label}</h4>
+                          <p className={`text-sm leading-relaxed max-w-lg transition-colors duration-300 ${
+                            darkMode ? 'text-gray-400' : 'text-gray-500'
+                          }`}>{def.details}</p>
 
                           <AnimatePresence>
                             {questionState.checked && (
@@ -1379,16 +1531,22 @@ export default function App() {
                               >
                                 <div className="space-y-3">
                                   <div className="flex items-center justify-between text-sm">
-                                    <span className="font-medium text-gray-700 flex items-center gap-1.5">
+                                    <span className={`font-medium flex items-center gap-1.5 transition-colors duration-300 ${
+                                      darkMode ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>
                                       <Camera className="w-4 h-4 text-gray-400" />
                                       增补照片指证材料 (强力推荐)
                                     </span>
-                                    <span className="text-xs text-blue-700 font-medium bg-blue-100/50 px-2.5 py-1 rounded-md">已传 {questionState.photos.length} 帧</span>
+                                    <span className={`text-xs font-medium px-2.5 py-1 rounded-md transition-colors duration-300 ${
+                                      darkMode ? 'text-blue-300 bg-blue-900/30' : 'text-blue-700 bg-blue-100/50'
+                                    }`}>已传 {questionState.photos.length} 帧</span>
                                   </div>
 
                                   <div className="flex flex-wrap gap-3">
                                     {questionState.photos.map((photo) => (
-                                      <div key={photo.id} className="w-20 h-20 rounded-xl border border-gray-200 overflow-hidden relative group shadow-sm bg-gray-50">
+                                      <div key={photo.id} className={`w-20 h-20 rounded-xl border overflow-hidden relative group shadow-sm transition-colors duration-300 ${
+                                        darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                      }`}>
                                         <img src={photo.url} alt={photo.name} className="w-full h-full object-cover" />
                                         <button
                                           onClick={() => handleRemovePhoto(def.id, photo.id)}
@@ -1401,7 +1559,11 @@ export default function App() {
 
                                     <button
                                       onClick={() => fileInputRefs.current[def.id]?.click()}
-                                      className="w-20 h-20 rounded-xl border border-dashed border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 flex flex-col items-center justify-center gap-1.5 text-gray-500 transition-colors shadow-sm"
+                                      className={`w-20 h-20 rounded-xl border border-dashed flex flex-col items-center justify-center gap-1.5 transition-colors shadow-sm ${
+                                        darkMode 
+                                          ? 'border-gray-500 bg-gray-700 hover:bg-gray-600 hover:border-gray-400 text-gray-400' 
+                                          : 'border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 text-gray-500'
+                                      }`}
                                     >
                                       <Plus className="w-5 h-5" />
                                       <span className="text-[11px] font-medium">选相册</span>
@@ -1426,10 +1588,16 @@ export default function App() {
               </div>
 
               {/* Others Section */}
-              <div className="mt-8 border border-gray-200 rounded-xl p-6 bg-gray-50">
+              <div className={`mt-8 border rounded-xl p-6 transition-colors duration-300 ${
+                darkMode 
+                  ? 'border-gray-600 bg-gray-700/50' 
+                  : 'border-gray-200 bg-gray-50'
+              }`}>
                 <div className="mb-4">
-                  <h4 className="font-semibold text-gray-900 flex items-center gap-2 text-[15px]">
-                    <AlertCircle className="w-4 h-4 text-gray-400" />
+                  <h4 className={`font-semibold flex items-center gap-2 text-[15px] transition-colors duration-300 ${
+                    darkMode ? 'text-gray-100' : 'text-gray-900'
+                  }`}>
+                    <AlertCircle className={`w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                      其它与建筑安全、消防安全、食品安全有关隐患
                   </h4>
                 </div>
@@ -1439,14 +1607,24 @@ export default function App() {
                   placeholder="如发现其他与建筑安全、消防安全、食品安全有关的隐患，请在这里简单叙述..."
                   value={state.othersText}
                   onChange={(e) => setState(prev => ({ ...prev, othersText: e.target.value }))}
-                  className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-gray-400 text-sm mb-4 shadow-sm"
+                  className={`w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm mb-4 shadow-sm ${
+                    darkMode 
+                      ? 'bg-gray-800 border border-gray-600 text-gray-100 placeholder:text-gray-500' 
+                      : 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400'
+                  }`}
                 />
 
-                <div className="pt-4 border-t border-gray-200">
-                  <span className="font-medium text-gray-700 text-sm mb-3 block">隐患配图与材料证明：</span>
+                <div className={`pt-4 border-t transition-colors duration-300 ${
+                  darkMode ? 'border-gray-600' : 'border-gray-200'
+                }`}>
+                  <span className={`font-medium text-sm mb-3 block transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>隐患配图与材料证明：</span>
                   <div className="flex flex-wrap gap-3">
                     {state.othersPhotos.map((photo) => (
-                      <div key={photo.id} className="w-20 h-20 rounded-xl border border-gray-200 overflow-hidden relative group shadow-sm">
+                      <div key={photo.id} className={`w-20 h-20 rounded-xl border overflow-hidden relative group shadow-sm transition-colors duration-300 ${
+                        darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200'
+                      }`}>
                         <img src={photo.url} alt={photo.name} className="w-full h-full object-cover" />
                         <button
                           onClick={() => handleRemovePhoto('others', photo.id)}
@@ -1459,7 +1637,11 @@ export default function App() {
 
                     <button
                       onClick={() => fileInputRefs.current['others']?.click()}
-                      className="w-20 h-20 rounded-xl border border-dashed border-gray-300 bg-white hover:bg-gray-50 flex flex-col items-center justify-center gap-1.5 text-gray-500 transition-colors shadow-sm"
+                      className={`w-20 h-20 rounded-xl border border-dashed flex flex-col items-center justify-center gap-1.5 transition-colors shadow-sm ${
+                        darkMode 
+                          ? 'border-gray-500 bg-gray-700 hover:bg-gray-600 text-gray-400' 
+                          : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-500'
+                      }`}
                     >
                       <Plus className="w-5 h-5" />
                       <span className="text-[11px] font-medium">添相片</span>
@@ -1475,10 +1657,16 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="mt-10 flex justify-between items-center pt-6 border-t border-gray-100">
+              <div className={`mt-10 flex justify-between items-center pt-6 border-t transition-colors duration-300 ${
+                darkMode ? 'border-gray-700' : 'border-gray-100'
+              }`}>
                 <button
                   onClick={handlePrevStep}
-                  className="px-5 py-2.5 text-gray-500 hover:text-gray-900 font-medium transition-colors flex items-center gap-1.5 hover:bg-gray-50 rounded-xl text-sm"
+                  className={`px-5 py-2.5 font-medium transition-colors flex items-center gap-1.5 rounded-xl text-sm ${
+                    darkMode 
+                      ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
                 >
                   <ChevronLeft className="w-4 h-4" /> 返回上步
                 </button>
@@ -1498,37 +1686,61 @@ export default function App() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
+            className={`rounded-2xl shadow-sm border overflow-hidden transition-colors duration-300 ${
+              darkMode 
+                ? 'bg-gray-800 border-gray-700' 
+                : 'bg-white border-gray-200'
+            }`}
           >
-            <div className="bg-green-50 px-6 py-12 border-b border-green-100 text-center">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-5 shadow-sm">
+            <div className={`px-6 py-12 border-b text-center transition-colors duration-300 ${
+              darkMode 
+                ? 'bg-green-900/30 border-green-800' 
+                : 'bg-green-50 border-green-100'
+            }`}>
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 shadow-sm transition-colors duration-300 ${
+                darkMode ? 'bg-gray-800' : 'bg-white'
+              }`}>
                 <Check className="w-10 h-10 text-green-600" />
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">卷宗提交成功</h2>
-              <p className="text-green-800/80 mt-3 font-medium text-sm">核实工作正进入受理中控台，感谢您的热心配合。</p>
+              <h2 className={`text-2xl md:text-3xl font-bold transition-colors duration-300 ${
+                darkMode ? 'text-gray-100' : 'text-gray-900'
+              }`}>卷宗提交成功</h2>
+              <p className={`mt-3 font-medium text-sm transition-colors duration-300 ${
+                darkMode ? 'text-green-400/80' : 'text-green-800/80'
+              }`}>核实工作正进入受理中控台，感谢您的热心配合。</p>
             </div>
 
             <div className="p-8 md:p-12 text-center flex flex-col items-center">
-              <div className="w-full max-w-sm bg-gray-50 border border-gray-100 rounded-2xl p-6 text-left mb-8 shadow-inner">
-                <div className="text-xs font-mono text-gray-400 tracking-wider mb-4 pb-4 border-b border-gray-200/60 flex items-center justify-between">
+              <div className={`w-full max-w-sm rounded-2xl p-6 text-left mb-8 shadow-inner transition-colors duration-300 ${
+                darkMode 
+                  ? 'bg-gray-700/50 border border-gray-600' 
+                  : 'bg-gray-50 border border-gray-100'
+              }`}>
+                <div className={`text-xs font-mono tracking-wider mb-4 pb-4 flex items-center justify-between transition-colors duration-300 ${
+                  darkMode 
+                    ? 'text-gray-500 border-b border-gray-600/60' 
+                    : 'text-gray-400 border-b border-gray-200/60'
+                }`}>
                   <span>单据票号</span>
-                  <span>HN-{submissions[0]?.id.substring(4, 10).toUpperCase()}</span>
+                  <span>HN-{submissions[0]?.id ? String(submissions[0].id).padStart(6, '0') : '------'}</span>
                 </div>
-                <div className="space-y-3.5 text-sm font-medium text-gray-600">
+                <div className={`space-y-3.5 text-sm font-medium transition-colors duration-300 ${
+                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500">实名提报人</span>
-                    <span className="text-gray-900">{state.reporterName}{state.reporterTitle}</span>
+                    <span className={darkMode ? 'text-gray-500' : 'text-gray-500'}>实名提报人</span>
+                    <span className={darkMode ? 'text-gray-200' : 'text-gray-900'}>{state.reporterName}{state.reporterTitle}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500">核对电话</span>
-                    <span className="text-gray-900">{state.reporterPhone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}</span>
+                    <span className={darkMode ? 'text-gray-500' : 'text-gray-500'}>核对电话</span>
+                    <span className={darkMode ? 'text-gray-200' : 'text-gray-900'}>{state.reporterPhone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500">提报地点</span>
-                    <span className="text-gray-900">{state.selectedCity} · {state.cinemaName}</span>
+                    <span className={darkMode ? 'text-gray-500' : 'text-gray-500'}>提报地点</span>
+                    <span className={darkMode ? 'text-gray-200' : 'text-gray-900'}>{state.selectedCity} · {state.cinemaName}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500">共计报备条目</span>
+                    <span className={darkMode ? 'text-gray-500' : 'text-gray-500'}>共计报备条目</span>
                     <span className="text-blue-600">{getHazardsList().filter(h => h.checked).length + (state.othersText.trim() ? 1 : 0)} 项</span>
                   </div>
                 </div>
@@ -1553,7 +1765,11 @@ export default function App() {
                     setFormAttempted(false);
                     setCurrentStep(0);
                   }}
-                  className="w-full py-3.5 text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-colors"
+                  className={`w-full py-3.5 rounded-xl font-medium transition-colors ${
+                    darkMode 
+                      ? 'text-gray-300 bg-gray-700 border border-gray-600 hover:bg-gray-600' 
+                      : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50'
+                  }`}
                 >
                   新启巡查反馈
                 </button>
@@ -1578,17 +1794,29 @@ export default function App() {
               initial={{ scale: 0.95, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 sm:p-8 z-10 mx-auto"
+              className={`relative w-full max-w-sm rounded-2xl shadow-xl p-6 sm:p-8 z-10 mx-auto transition-colors duration-300 ${
+                darkMode 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white'
+              }`}
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-1.5">📍 选择所在地区</h3>
-              <p className="text-gray-500 text-sm mb-6">自动定位失败，请手动选择您所在的市和区县：</p>
+              <h3 className={`text-xl font-bold mb-1.5 transition-colors duration-300 ${
+                darkMode ? 'text-gray-100' : 'text-gray-900'
+              }`}>📍 选择所在地区</h3>
+              <p className={`text-sm mb-6 transition-colors duration-300 ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>自动定位失败，请手动选择您所在的市和区县：</p>
 
               <div className="space-y-4">
                 <div className="relative">
                   <select
                     value={pickerCity}
                     onChange={(e) => { setPickerCity(e.target.value); setPickerCounty(''); }}
-                    className="w-full appearance-none bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+                    className={`w-full appearance-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm ${
+                      darkMode 
+                        ? 'bg-gray-700 border border-gray-600 text-gray-100' 
+                        : 'bg-white border border-gray-300 text-gray-900'
+                    }`}
                   >
                     <option value="">选择市/州</option>
                     {HUNAN_REGIONS.map((region) => (
@@ -1603,7 +1831,11 @@ export default function App() {
                     value={pickerCounty}
                     disabled={!pickerCity}
                     onChange={(e) => setPickerCounty(e.target.value)}
-                    className="w-full appearance-none bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400 text-sm"
+                    className={`w-full appearance-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm ${
+                      darkMode 
+                        ? 'bg-gray-700 border border-gray-600 text-gray-100 disabled:bg-gray-800 disabled:text-gray-500' 
+                        : 'bg-white border border-gray-300 text-gray-900 disabled:bg-gray-50 disabled:text-gray-400'
+                    }`}
                   >
                     <option value="">选择区/县</option>
                     {pickerCity && 
@@ -1619,7 +1851,11 @@ export default function App() {
               <div className="mt-6 flex gap-3">
                 <button
                   onClick={() => setLocationPickerOpen(false)}
-                  className="flex-1 py-3 text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors text-sm font-medium"
+                  className={`flex-1 py-3 rounded-xl transition-colors text-sm font-medium ${
+                    darkMode 
+                      ? 'text-gray-300 bg-gray-700 border border-gray-600 hover:bg-gray-600' 
+                      : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50'
+                  }`}
                 >
                   取消
                 </button>
@@ -1651,18 +1887,32 @@ export default function App() {
               initial={{ scale: 0.95, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6 sm:p-8 z-10 mx-auto"
+              className={`relative w-full max-w-md rounded-2xl shadow-xl p-6 sm:p-8 z-10 mx-auto transition-colors duration-300 ${
+                darkMode 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white'
+              }`}
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-1.5">准备发包提交</h3>
-              <p className="text-gray-500 text-sm mb-6">请核实下列报单情况是否与现状相符：</p>
+              <h3 className={`text-xl font-bold mb-1.5 transition-colors duration-300 ${
+                darkMode ? 'text-gray-100' : 'text-gray-900'
+              }`}>准备发包提交</h3>
+              <p className={`text-sm mb-6 transition-colors duration-300 ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>请核实下列报单情况是否与现状相符：</p>
 
-              <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 mb-8 space-y-3 text-sm text-gray-700 shadow-inner">
-                <div className="pb-3 border-b border-gray-200 flex justify-between items-center text-xs">
-                  <span className="font-medium text-gray-500">{state.selectedCity} · {state.selectedCounty}</span>
-                  <span className="font-semibold text-gray-800">{state.cinemaName}</span>
+              <div className={`rounded-xl border p-4 mb-8 space-y-3 text-sm shadow-inner transition-colors duration-300 ${
+                darkMode 
+                  ? 'bg-gray-700/50 border-gray-600 text-gray-300' 
+                  : 'bg-gray-50 border-gray-100 text-gray-700'
+              }`}>
+                <div className={`pb-3 flex justify-between items-center text-xs transition-colors duration-300 ${
+                  darkMode ? 'border-b border-gray-600' : 'border-b border-gray-200'
+                }`}>
+                  <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{state.selectedCity} · {state.selectedCounty}</span>
+                  <span className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{state.cinemaName}</span>
                 </div>
-                <p><span className="text-gray-500 w-16 inline-block">联系姓名</span> <strong>{state.reporterName}</strong> {state.reporterTitle}</p>
-                <p><span className="text-gray-500 w-16 inline-block">拨打号码</span> <strong>{state.reporterPhone}</strong></p>
+                <p><span className={`w-16 inline-block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>联系姓名</span> <strong className={darkMode ? 'text-gray-200' : ''}>{state.reporterName}</strong> {state.reporterTitle}</p>
+                <p><span className={`w-16 inline-block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>拨打号码</span> <strong className={darkMode ? 'text-gray-200' : ''}>{state.reporterPhone}</strong></p>
                 <p><span className="text-gray-500 w-16 inline-block">异常项录</span> 共记录 <span className="text-blue-600 font-bold">{getHazardsList().filter(h => h.checked).length + (state.othersText.trim() ? 1 : 0)}</span> 项问题</p>
                 <p><span className="text-gray-500 w-16 inline-block">凭证相片</span> 共拍摄 <span className="text-blue-600 font-bold">{getHazardsList().reduce((acc, h) => acc + h.photos.length, 0) + state.othersPhotos.length}</span> 张底料</p>
               </div>
@@ -1679,14 +1929,22 @@ export default function App() {
                   <button
                     onClick={() => setConfirmModalOpen(false)}
                     disabled={submitting}
-                    className="flex-1 py-3 text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors"
+                    className={`flex-1 py-3 rounded-xl transition-colors ${
+                      darkMode 
+                        ? 'text-gray-300 bg-gray-700 border border-gray-600 hover:bg-gray-600' 
+                        : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50'
+                    }`}
                   >
                     取消申请
                   </button>
                   <button
                     onClick={handleCancelAndExit}
                     disabled={submitting}
-                    className="flex-1 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors border border-red-100"
+                    className={`flex-1 py-3 rounded-xl transition-colors border ${
+                      darkMode 
+                        ? 'bg-red-900/30 hover:bg-red-900/50 text-red-400 border-red-800' 
+                        : 'bg-red-50 hover:bg-red-100 text-red-600 border-red-100'
+                    }`}
                   >
                     终止
                   </button>
@@ -1698,7 +1956,11 @@ export default function App() {
       </AnimatePresence>
 
       {/* FOOTER */}
-      <footer className="mt-20 border-t border-gray-200 bg-white py-6 flex flex-col items-center justify-center text-xs text-gray-400">
+      <footer className={`mt-20 py-6 flex flex-col items-center justify-center text-xs transition-colors duration-300 ${
+        darkMode 
+          ? 'border-t border-gray-700 bg-gray-800 text-gray-500' 
+          : 'border-t border-gray-200 bg-white text-gray-400'
+      }`}>
         <p className="mb-2">湖南省电影局 · 湖南省电影行业协会 监制</p>
         <p>为创造放心舒适的公共观影环境共同发声举报</p>
       </footer>
