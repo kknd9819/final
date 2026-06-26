@@ -195,7 +195,8 @@ export default function App() {
             }))
           },
           status: item.status,
-          rewardAmount: item.rewardAmount
+          rewardAmount: item.rewardAmount,
+          note: item.note
         }));
         setHistoryData(mapped);
         console.log('History data set:', mapped.length, 'records');

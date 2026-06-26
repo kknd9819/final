@@ -53,4 +53,5 @@ export interface SurveySubmission {
   state: SurveyState;
   status: 'pending' | 'reviewing' | 'awarded' | 'invalid' | 'resolved';
   rewardAmount?: number;
+  note?: string;
 }
