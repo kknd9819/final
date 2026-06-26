@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 @Entity
 @Getter
@@ -20,19 +19,15 @@ import java.util.Random;
 @Table(name = "submissions", indexes = {
     @Index(name = "idx_status", columnList = "status"),
     @Index(name = "idx_selected_city", columnList = "selected_city"),
-    @Index(name = "idx_timestamp", columnList = "timestamp"),
+    @Index(name = "idx_created_at", columnList = "created_at"),
     @Index(name = "idx_is_pinned", columnList = "is_pinned")
 })
 public class Submission {
     
     @Id
-    @Column(name = "id", length = 50)
-    private String id;
-    
-    @Column(name = "timestamp")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime timestamp;
-    
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @Column(name = "reporter_name", length = 100, nullable = false)
     private String reporterName;
     
@@ -80,36 +75,14 @@ public class Submission {
     
     @Column(name = "created_at")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
     
     @Column(name = "updated_at")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
     
-    @PrePersist
-    protected void onCreate() {
-        if (this.id == null) {
-            this.id = generateId();
-        }
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        if (this.timestamp == null) {
-            this.timestamp = this.createdAt;
-        }
-    }
-    
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-    
-    private String generateId() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 6; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return "HN-" + sb.toString();
     }
 }

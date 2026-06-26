@@ -334,8 +334,8 @@ function renderTable(data) {
     var photoCount = item.photoCount != null ? item.photoCount : getPhotoCount(item.photos, item.othersPhotos);
     return '<tr data-id="' + esc(item.id) + '">' +
       '<td style="text-align:center;">' + (item.isPinned ? '<span class="pin-badge" style="cursor:pointer;font-size:16px;" title="取消置顶" onclick="togglePin(\'' + esc(item.id) + '\')">📌</span>' : '<span class="pin-btn" style="cursor:pointer;font-size:14px;color:#999;opacity:0.5;" title="置顶" onclick="togglePin(\'' + esc(item.id) + '\')">📍</span>') + '</td>' +
-      '<td class="clickable" title="' + esc(item.id) + '" onclick="openDetail(\'' + esc(item.id) + '\')">' + esc(item.id.substring(0, 12)) + '...</td>' +
-      '<td>' + formatTimestamp(item.timestamp) + '</td>' +
+      '<td class="clickable" title="' + esc(item.id) + '" onclick="openDetail(\'' + esc(item.id) + '\')">' + esc(item.id) + '</td>' +
+      '<td>' + formatTimestamp(item.createdAt) + '</td>' +
       '<td>' + esc(item.cinemaName) + '</td>' +
       '<td>' + esc(item.selectedCity) + (item.selectedCounty ? ' · ' + esc(item.selectedCounty) : '') + '</td>' +
       '<td>' + esc(item.reporterName) + (item.reporterTitle ? ' ' + esc(item.reporterTitle) : '') + '</td>' +
@@ -418,7 +418,7 @@ function renderDetail(data) {
 
   container.innerHTML =
     '<div class="field"><div class="field-label">ID</div><div class="field-value">' + esc(data.id) + '</div></div>' +
-    '<div class="field"><div class="field-label">提交时间</div><div class="field-value">' + formatTimestamp(data.timestamp) + '</div></div>' +
+    '<div class="field"><div class="field-label">提交时间</div><div class="field-value">' + formatTimestamp(data.createdAt) + '</div></div>' +
     '<div class="field"><div class="field-label">举报人</div><div class="field-value">' + esc(data.reporterName) + (data.reporterTitle ? ' ' + esc(data.reporterTitle) : '') + '</div></div>' +
     '<div class="field"><div class="field-label">手机号</div><div class="field-value">' + esc(data.reporterPhone) + '</div></div>' +
     '<div class="field"><div class="field-label">地区</div><div class="field-value">' + esc(data.selectedCity) + ' · ' + esc(data.selectedCounty || '未选择') + '</div></div>' +

@@ -93,8 +93,9 @@ export default function App() {
   const [locationPickerOpen, setLocationPickerOpen] = useState<boolean>(false);
   const [pickerCity, setPickerCity] = useState<string>('');
   const [pickerCounty, setPickerCounty] = useState<string>('');
-
-  const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
+  const [historyData, setHistoryData] = useState<SurveySubmission[]>([]);
+  const [historyLoading, setHistoryLoading] = useState<boolean>(false);
+  const [lastSubmittedId, setLastSubmittedId] = useState<string>('');
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   // Dark mode state
@@ -115,23 +116,6 @@ export default function App() {
 
   const toggleDarkMode = () => {
     setDarkMode(prev => !prev);
-  };
-
-  // Load persisted submissions from localStorage
-  useEffect(() => {
-    const cached = localStorage.getItem('hunan_cinema_survey_submissions');
-    if (cached) {
-      try {
-        setSubmissions(JSON.parse(cached));
-      } catch (e) {
-        console.error('Error parsing stored submissions:', e);
-      }
-    }
-  }, []);
-
-  const saveSubmissions = (newSubmissions: SurveySubmission[]) => {
-    setSubmissions(newSubmissions);
-    localStorage.setItem('hunan_cinema_survey_submissions', JSON.stringify(newSubmissions));
   };
 
   // Load persisted form draft from localStorage
@@ -169,6 +153,63 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toastMessage]);
+
+  const fetchHistory = async (phone: string) => {
+    setHistoryLoading(true);
+    setHistoryData([]); // 清空旧数据，确保显示加载状态
+    try {
+      const url = `/api/history?reporterPhone=${encodeURIComponent(phone)}&_t=${Date.now()}`;
+      console.log('Fetching history from:', url);
+      const response = await fetchWithTimeout(
+        url,
+        {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        },
+        10000
+      );
+      console.log('History API response status:', response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('History API returned', data.length, 'records:', data.map((d: any) => ({ id: d.id, phone: d.reporterPhone, createdAt: d.createdAt })));
+        const mapped: SurveySubmission[] = data.map((item: any) => ({
+          id: String(item.id),
+          timestamp: item.createdAt,
+          state: {
+            reporterName: item.reporterName,
+            reporterTitle: item.reporterTitle || '',
+            reporterPhone: item.reporterPhone,
+            selectedCity: item.selectedCity,
+            selectedCounty: item.selectedCounty || '',
+            cinemaName: item.cinemaName,
+            hazards: item.hazards || {},
+            othersText: item.othersText || '',
+            othersPhotos: (item.othersPhotos || []).map((p: any) => ({
+              id: String(Math.random()),
+              name: '',
+              url: p.url || '',
+              size: ''
+            }))
+          },
+          status: item.status,
+          rewardAmount: item.rewardAmount
+        }));
+        setHistoryData(mapped);
+        console.log('History data set:', mapped.length, 'records');
+      } else {
+        console.error('History API error:', response.status, response.statusText);
+        const errorText = await response.text().catch(() => '');
+        console.error('Error body:', errorText);
+      }
+    } catch (error) {
+      console.error('Failed to fetch history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const handlePhoneChange = (val: string) => {
     const cleaned = val.replace(/[^\d]/g, '').slice(0, 11);
@@ -1016,17 +1057,7 @@ export default function App() {
         throw new Error(result.error || '提交失败');
       }
 
-      // 同时保存到本地历史记录
-      const newSubmission: SurveySubmission = {
-        id: result.id,
-        timestamp: new Date().toISOString(),
-        state: state,
-        status: 'pending',
-        rewardAmount: 0,
-      };
-
-      const updatedSubmissions = [newSubmission, ...submissions];
-      saveSubmissions(updatedSubmissions);
+      setLastSubmittedId(String(result.id));
       clearDraft();
       
       setSubmitting(false);
@@ -1043,22 +1074,19 @@ export default function App() {
     }
   };
 
-  const handleDeleteStub = async (id: number) => {
-    // 同步删除后端数据
+  const handleDeleteStub = async (id: string) => {
     try {
       await fetchWithTimeout(`${API_BASE}/api/delete-by-user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       }, 10000);
-    } catch (err) {
-      console.warn('后端删除同步失败（不影响本地删除）:', err);
+      setHistoryData(prev => prev.filter(s => s.id !== id));
+      setToastMessage('已删除该条记录');
+    } catch (error) {
+      console.error('Delete failed:', error);
+      setToastMessage('⚠️ 删除失败');
     }
-    
-    // 本地删除
-    const nextList = submissions.filter(s => s.id !== id);
-    saveSubmissions(nextList);
-    setToastMessage('已删除该条记录');
   };
 
   const getProgressPercent = () => {
@@ -1128,9 +1156,14 @@ export default function App() {
             </span>
           </button>
 
-          {submissions.length > 0 && (
+          {state.reporterPhone.length === 11 && (
             <button
-              onClick={() => setShowHistory(!showHistory)}
+              onClick={() => {
+                if (!showHistory) {
+                  fetchHistory(state.reporterPhone);
+                }
+                setShowHistory(!showHistory);
+              }}
               className={`px-3.5 py-2 flex items-center gap-2 text-sm font-medium rounded-lg transition-colors shadow-sm ${
                 darkMode 
                   ? 'text-gray-300 bg-gray-700 border border-gray-600 hover:bg-gray-600' 
@@ -1138,7 +1171,7 @@ export default function App() {
               }`}
             >
               <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-              <span>历史记录 ({submissions.length})</span>
+              <span>历史记录</span>
             </button>
           )}
         </div>
@@ -1183,9 +1216,11 @@ export default function App() {
               className="overflow-hidden mb-6"
             >
               <ReportingHistory 
-                submissions={submissions}
+                submissions={historyData}
                 onDelete={handleDeleteStub}
                 onClose={() => setShowHistory(false)}
+                loading={historyLoading}
+                onRefresh={() => fetchHistory(state.reporterPhone)}
               />
             </motion.div>
           )}
@@ -1722,7 +1757,7 @@ export default function App() {
                     : 'text-gray-400 border-b border-gray-200/60'
                 }`}>
                   <span>单据票号</span>
-                  <span>HN-{submissions[0]?.id ? String(submissions[0].id).padStart(6, '0') : '------'}</span>
+                  <span>HN-{lastSubmittedId ? String(lastSubmittedId).padStart(6, '0') : '------'}</span>
                 </div>
                 <div className={`space-y-3.5 text-sm font-medium transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
@@ -1748,7 +1783,10 @@ export default function App() {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-xs sm:max-w-md mx-auto">
                 <button
-                  onClick={() => setShowHistory(true)}
+                  onClick={() => {
+                    fetchHistory(state.reporterPhone);
+                    setShowHistory(true);
+                  }}
                   className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-sm transition-all hover:shadow-md"
                 >
                   追踪提报记录

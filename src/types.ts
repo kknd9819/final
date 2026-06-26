@@ -48,9 +48,9 @@ export interface QuestionDefinition {
 }
 
 export interface SurveySubmission {
-  id: number;
+  id: string;
   timestamp: string;
   state: SurveyState;
-  status: 'pending' | 'reviewing' | 'awarded' | 'invalid';
+  status: 'pending' | 'reviewing' | 'awarded' | 'invalid' | 'resolved';
   rewardAmount?: number;
 }

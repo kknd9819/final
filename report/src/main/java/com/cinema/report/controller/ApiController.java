@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -200,6 +201,16 @@ public class ApiController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("删除失败: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/history")
+    public ResponseEntity<?> history(@RequestParam("reporterPhone") String reporterPhone) {
+        try {
+            List<Submission> submissions = submissionService.getHistoryByPhone(reporterPhone);
+            return ResponseEntity.ok(submissions);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("查询历史记录失败: " + e.getMessage()));
         }
     }
 }

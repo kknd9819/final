@@ -13,13 +13,15 @@ import java.util.List;
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, String> {
     
-    Page<Submission> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
+    List<Submission> findByReporterPhoneOrderByIdDesc(String reporterPhone);
     
-    Page<Submission> findBySelectedCityOrderByCreatedAtDesc(String city, Pageable pageable);
+    Page<Submission> findByStatusOrderByIdDesc(String status, Pageable pageable);
     
-    Page<Submission> findByStatusAndSelectedCityOrderByCreatedAtDesc(String status, String city, Pageable pageable);
+    Page<Submission> findBySelectedCityOrderByIdDesc(String city, Pageable pageable);
     
-    Page<Submission> findAllByOrderByCreatedAtDesc(Pageable pageable);
+    Page<Submission> findByStatusAndSelectedCityOrderByIdDesc(String status, String city, Pageable pageable);
+    
+    Page<Submission> findAllByOrderByIdDesc(Pageable pageable);
     
     long countByStatus(String status);
     
@@ -31,7 +33,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, String> 
            "LOWER(s.cinemaName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(s.selectedCity) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(s.selectedCounty) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "ORDER BY s.createdAt DESC")
+           "ORDER BY s.id DESC")
     Page<Submission> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
     
     @Query("SELECT s.selectedCity, COUNT(s) FROM Submission s GROUP BY s.selectedCity")
