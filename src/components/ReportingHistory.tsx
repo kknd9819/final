@@ -108,6 +108,12 @@ export default function ReportingHistory({ submissions, onDelete, onClose, loadi
                     <p className="pl-6">
                       提报人: <span className="text-gray-900 dark:text-gray-100">{submission.state.reporterName || "佚名"}{submission.state.reporterTitle} ({submission.state.reporterPhone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')})</span>
                     </p>
+                    {submission.note && (
+                      <p className="pl-6 mt-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                        <span className="font-medium text-blue-700 dark:text-blue-300 block mb-1">管理员备注:</span>
+                        <span className="text-gray-700 dark:text-gray-300 text-xs">{submission.note}</span>
+                      </p>
+                    )}
                     <div className="pt-3 mt-3 border-t border-gray-50 dark:border-gray-700 flex items-start flex-col gap-1.5 pl-6">
                       <p className="font-medium text-gray-900 dark:text-gray-100">登记隐患项 ({hazardCount}个):</p>
                       <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400 w-full text-xs">
