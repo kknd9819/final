@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 @Entity
 @Getter
@@ -26,8 +25,9 @@ import java.util.Random;
 public class Submission {
     
     @Id
-    @Column(name = "id", length = 50)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
     
     @Column(name = "timestamp")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -88,9 +88,6 @@ public class Submission {
     
     @PrePersist
     protected void onCreate() {
-        if (this.id == null) {
-            this.id = generateId();
-        }
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         if (this.timestamp == null) {
@@ -101,15 +98,5 @@ public class Submission {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-    
-    private String generateId() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 6; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return "HN-" + sb.toString();
     }
 }

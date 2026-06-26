@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -93,9 +94,15 @@ public class ApiController {
     }
     
     @PostMapping("/delete-by-user")
-    public ResponseEntity<?> deleteByUser(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> deleteByUser(@RequestBody Map<String, Object> request) {
         try {
-            String id = request.get("id");
+            Object idObj = request.get("id");
+            Long id;
+            if (idObj instanceof Number) {
+                id = ((Number) idObj).longValue();
+            } else {
+                id = Long.parseLong((String) idObj);
+            }
             submissionService.deleteByUser(id);
             Map<String, Boolean> result = new HashMap<>();
             result.put("success", true);
@@ -149,7 +156,7 @@ public class ApiController {
     }
     
     @GetMapping("/detail")
-    public ResponseEntity<?> detail(@RequestParam("id") String id) {
+    public ResponseEntity<?> detail(@RequestParam("id") Long id) {
         Submission submission = submissionService.getDetail(id);
         if (submission != null) {
             return ResponseEntity.ok(submission);
@@ -177,9 +184,15 @@ public class ApiController {
     }
     
     @PostMapping("/pin")
-    public ResponseEntity<?> pin(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> pin(@RequestBody Map<String, Object> request) {
         try {
-            String id = request.get("id");
+            Object idObj = request.get("id");
+            Long id;
+            if (idObj instanceof Number) {
+                id = ((Number) idObj).longValue();
+            } else {
+                id = Long.parseLong((String) idObj);
+            }
             boolean pinned = submissionService.togglePin(id);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
@@ -191,15 +204,56 @@ public class ApiController {
     }
     
     @DeleteMapping("/delete")
-    public ResponseEntity<?> delete(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> delete(@RequestBody Map<String, Object> request) {
         try {
-            String id = request.get("id");
+            Object idObj = request.get("id");
+            Long id;
+            if (idObj instanceof Number) {
+                id = ((Number) idObj).longValue();
+            } else {
+                id = Long.parseLong((String) idObj);
+            }
             submissionService.delete(id);
             Map<String, Boolean> result = new HashMap<>();
             result.put("success", true);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("删除失败: " + e.getMessage()));
+        }
+    }
+    
+    /** Batch delete multiple submissions */
+    @PostMapping("/batch-delete")
+    public ResponseEntity<?> batchDelete(@RequestBody Map<String, List<Long>> request) {
+        try {
+            List<Long> ids = request.get("ids");
+            if (ids == null || ids.isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("请选择要删除的记录"));
+            }
+            int count = submissionService.batchDelete(ids);
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("deleted", count);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("批量删除失败: " + e.getMessage()));
+        }
+    }
+    
+    /** Batch update status for multiple submissions */
+    @PostMapping("/batch-status")
+    public ResponseEntity<?> batchStatus(@RequestBody StatusUpdateRequest request) {
+        try {
+            if (request.getIds() == null || request.getIds().isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("请选择要处理的记录"));
+            }
+            int count = submissionService.batchUpdateStatus(request.getIds(), request.getStatus(), request.getNote());
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("updated", count);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("批量更新失败: " + e.getMessage()));
         }
     }
 }

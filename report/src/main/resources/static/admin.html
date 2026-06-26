@@ -99,14 +99,29 @@ tr:hover{background:#f8f9fa}
   <div class="filters">
     <select id="filterCity" onchange="loadList()"><option value="">全部城市</option></select>
     <select id="filterStatus" onchange="loadList()"><option value="">全部状态</option><option value="pending">待处理</option><option value="reviewing">处理中</option><option value="resolved">已解决</option><option value="invalid">无效</option></select>
-    <select id="filterSort" onchange="loadList()"><option value="newest">最新优先</option><option value="oldest">最早优先</option></select>
+    <select id="filterCategory" onchange="loadList()"><option value="">全部类别</option><option value="fire">消防安全</option><option value="building">建筑安全</option><option value="food">食品安全</option><option value="other">其他</option></select>
     <input type="text" id="filterKeyword" placeholder="搜索影院/姓名/电话/ID..." onkeydown="if(event.key==='Enter')loadList()">
     <button onclick="loadList()">🔍 搜索</button>
   </div>
+  <div class="batch-actions" style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+    <label style="font-size:13px;color:#666;display:flex;align-items:center;gap:4px;cursor:pointer;">
+      <input type="checkbox" id="selectAll" onchange="toggleSelectAll()"> 全选
+    </label>
+    <span id="selectedCount" style="font-size:13px;color:#999;">已选 0 条</span>
+    <select id="batchStatusSelect" style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;">
+      <option value="">批量改状态...</option>
+      <option value="pending">待处理</option>
+      <option value="reviewing">处理中</option>
+      <option value="resolved">已解决</option>
+      <option value="invalid">无效</option>
+    </select>
+    <button onclick="batchUpdateStatus()" style="padding:6px 14px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">批量处理</button>
+    <button onclick="batchDelete()" style="padding:6px 14px;background:#e74c3c;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">批量删除</button>
+  </div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th style="width:30px;">置顶</th><th>ID</th><th>提交时间</th><th>影院名称</th><th>地区</th><th>举报人</th><th>状态</th><th>隐患数</th><th>照片数</th><th>操作</th><th style="width:60px;">删除</th></tr></thead>
-      <tbody id="tableBody"><tr><td colspan="11" class="loading">加载中...</td></tr></tbody>
+      <thead><tr><th style="width:30px;"><input type="checkbox" onchange="toggleSelectAll()" id="selectAllHeader"></th><th style="width:30px;">置顶</th><th>ID</th><th>提交时间</th><th>影院名称</th><th>地区</th><th>举报人</th><th>状态</th><th>隐患数</th><th>照片数</th><th>操作</th><th style="width:60px;">删除</th></tr></thead>
+      <tbody id="tableBody"><tr><td colspan="12" class="loading">加载中...</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="pagination"></div>
@@ -327,14 +342,16 @@ function loadList() {
 
 function renderTable(data) {
   var tbody = document.getElementById('tableBody');
-  if (!data.list || data.list.length === 0) { tbody.innerHTML = '<tr><td colspan="11" class="empty">暂无数据</td></tr>'; return; }
+  if (!data.list || data.list.length === 0) { tbody.innerHTML = '<tr><td colspan="12" class="empty">暂无数据</td></tr>'; return; }
   var esc = function(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g, "&#39;").replace(/"/g, "&quot;"); };
   tbody.innerHTML = data.list.map(function(item) {
     var hazardCount = item.hazardCount != null ? item.hazardCount : getHazardCount(item.hazards);
     var photoCount = item.photoCount != null ? item.photoCount : getPhotoCount(item.photos, item.othersPhotos);
-    return '<tr data-id="' + esc(item.id) + '">' +
-      '<td style="text-align:center;">' + (item.isPinned ? '<span class="pin-badge" style="cursor:pointer;font-size:16px;" title="取消置顶" onclick="togglePin(\'' + esc(item.id) + '\')">📌</span>' : '<span class="pin-btn" style="cursor:pointer;font-size:14px;color:#999;opacity:0.5;" title="置顶" onclick="togglePin(\'' + esc(item.id) + '\')">📍</span>') + '</td>' +
-      '<td class="clickable" title="' + esc(item.id) + '" onclick="openDetail(\'' + esc(item.id) + '\')">' + esc(item.id.substring(0, 12)) + '...</td>' +
+    var idStr = String(item.id);
+    return '<tr data-id="' + idStr + '">' +
+      '<td style="text-align:center;"><input type="checkbox" class="row-checkbox" value="' + idStr + '" onchange="updateSelectedCount()"></td>' +
+      '<td style="text-align:center;">' + (item.isPinned ? '<span class="pin-badge" style="cursor:pointer;font-size:16px;" title="取消置顶" onclick="togglePin(' + idStr + ')">📌</span>' : '<span class="pin-btn" style="cursor:pointer;font-size:14px;color:#999;opacity:0.5;" title="置顶" onclick="togglePin(' + idStr + ')">📍</span>') + '</td>' +
+      '<td class="clickable" title="' + idStr + '" onclick="openDetail(' + idStr + ')">#' + idStr + '</td>' +
       '<td>' + formatTimestamp(item.timestamp) + '</td>' +
       '<td>' + esc(item.cinemaName) + '</td>' +
       '<td>' + esc(item.selectedCity) + (item.selectedCounty ? ' · ' + esc(item.selectedCounty) : '') + '</td>' +
@@ -342,8 +359,8 @@ function renderTable(data) {
       '<td><span class="status-badge status-' + item.status + '">' + (STATUS_LABELS[item.status] || item.status) + '</span></td>' +
       '<td>' + hazardCount + '</td>' +
       '<td>' + photoCount + '</td>' +
-      '<td><button class="clickable" style="background:none;border:none;font-size:13px;cursor:pointer;color:#667eea;" onclick="openDetail(\'' + esc(item.id) + '\')">查看详情</button></td>' +
-      '<td style="text-align:center;"><button style="background:none;border:none;font-size:16px;cursor:pointer;color:#e74c3c;opacity:0.6;" title="删除" onclick="deleteSubmission(\'' + esc(item.id) + '\')">🗑️</button></td>' +
+      '<td><button class="clickable" style="background:none;border:none;font-size:13px;cursor:pointer;color:#667eea;" onclick="openDetail(' + idStr + ')">查看详情</button></td>' +
+      '<td style="text-align:center;"><button style="background:none;border:none;font-size:16px;cursor:pointer;color:#e74c3c;opacity:0.6;" title="删除" onclick="deleteSubmission(' + idStr + ')">🗑️</button></td>' +
     '</tr>';
   }).join('');
 }
@@ -360,6 +377,61 @@ function renderPagination(data) {
 function goPage(page) { if (page < 1) return; currentPage = page; loadList(); }
 
 // ========== Actions ==========
+// ========== Batch Operations ==========
+function toggleSelectAll() {
+  var checked = document.getElementById('selectAll').checked || document.getElementById('selectAllHeader').checked;
+  document.getElementById('selectAll').checked = checked;
+  document.getElementById('selectAllHeader').checked = checked;
+  var checkboxes = document.querySelectorAll('.row-checkbox');
+  checkboxes.forEach(function(cb) { cb.checked = checked; });
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  var checked = document.querySelectorAll('.row-checkbox:checked').length;
+  document.getElementById('selectedCount').textContent = '已选 ' + checked + ' 条';
+}
+
+function getSelectedIds() {
+  var ids = [];
+  document.querySelectorAll('.row-checkbox:checked').forEach(function(cb) {
+    ids.push(parseInt(cb.value));
+  });
+  return ids;
+}
+
+function batchUpdateStatus() {
+  var ids = getSelectedIds();
+  if (ids.length === 0) { alert('请先勾选要处理的记录'); return; }
+  var status = document.getElementById('batchStatusSelect').value;
+  if (!status) { alert('请选择要更改的状态'); return; }
+  if (!confirm('确定要将选中的 ' + ids.length + ' 条记录状态改为「' + (STATUS_LABELS[status] || status) + '」吗？')) return;
+  apiRequest('/api/batch-status', {
+    method: 'POST',
+    body: JSON.stringify({ ids: ids, status: status, note: '批量处理' })
+  })
+  .then(function(data) {
+    if (data.success) { alert('成功更新 ' + (data.updated || ids.length) + ' 条记录！'); loadStats(); loadList(); }
+    else alert('批量处理失败：' + (data.message || data.error || '未知错误'));
+  })
+  .catch(function(err) { alert('批量处理失败: ' + err.message); });
+}
+
+function batchDelete() {
+  var ids = getSelectedIds();
+  if (ids.length === 0) { alert('请先勾选要删除的记录'); return; }
+  if (!confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？此操作不可恢复！')) return;
+  apiRequest('/api/batch-delete', {
+    method: 'POST',
+    body: JSON.stringify({ ids: ids })
+  })
+  .then(function(data) {
+    if (data.success) { alert('成功删除 ' + (data.deleted || ids.length) + ' 条记录！'); loadStats(); loadList(); }
+    else alert('批量删除失败：' + (data.message || data.error || '未知错误'));
+  })
+  .catch(function(err) { alert('批量删除失败: ' + err.message); });
+}
+
 function togglePin(id) {
   apiRequest('/api/pin', {
     method: 'POST',
@@ -455,6 +527,54 @@ function saveStatus(id) {
   })
   .catch(function(err) { alert('保存失败: ' + err.message); });
 }
+
+// ========== Category Filter ==========
+var HAZARD_CATEGORIES = {
+  '5': 'fire', '6': 'fire', '7': 'fire', '8': 'fire', '9': 'fire', '10': 'fire', '16': 'fire',
+  '12': 'building', '13': 'building',
+  '11': 'food', '14': 'food', '15': 'food'
+};
+
+function getHazardCategory(hazards) {
+  var h = parseJsonField(hazards, {});
+  var cats = {};
+  if (typeof h === 'object' && !Array.isArray(h)) {
+    Object.entries(h).forEach(function(e) {
+      if (e[1] && e[1].checked) {
+        var cat = HAZARD_CATEGORIES[e[0]] || 'other';
+        cats[cat] = true;
+      }
+    });
+  }
+  return Object.keys(cats);
+}
+
+// Override loadList to support category filter
+var _origLoadList = loadList;
+loadList = function() {
+  var params = new URLSearchParams({
+    page: currentPage - 1, pageSize: 20,
+    sort: document.getElementById('filterSort').value,
+    city: document.getElementById('filterCity').value,
+    status: document.getElementById('filterStatus').value,
+    keyword: document.getElementById('filterKeyword').value
+  });
+  apiRequest('/api/list?' + params.toString())
+  .then(function(data) {
+    if (data.error) throw new Error(data.error);
+    // Apply category filter client-side
+    var category = document.getElementById('filterCategory').value;
+    if (category && data.list) {
+      data.list = data.list.filter(function(item) {
+        var cats = getHazardCategory(item.hazards);
+        return cats.indexOf(category) !== -1;
+      });
+      data.total = data.list.length;
+    }
+    renderTable(data); renderPagination(data);
+  })
+  .catch(function(err) { document.getElementById('tableBody').innerHTML = '<tr><td colspan="12" class="empty" style="color:#e74c3c">数据加载失败</td></tr>'; });
+};
 
 // ========== Auto-login on page load ==========
 (function() {

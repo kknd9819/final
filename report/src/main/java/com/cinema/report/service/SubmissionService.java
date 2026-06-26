@@ -61,7 +61,6 @@ public class SubmissionService {
         List<Map<String, Object>> result = new ArrayList<>();
         for (Map<String, Object> photo : photos) {
             Map<String, Object> newPhoto = new HashMap<>(photo);
-            // 检查 url 字段是否为 base64 数据
             Object urlObj = newPhoto.get("url");
             if (urlObj instanceof String) {
                 String url = (String) urlObj;
@@ -72,7 +71,6 @@ public class SubmissionService {
                     }
                 }
             }
-            // 检查 src 字段
             Object srcObj = newPhoto.get("src");
             if (srcObj instanceof String) {
                 String src = (String) srcObj;
@@ -91,19 +89,14 @@ public class SubmissionService {
         return result;
     }
     
-    /**
-     * 将 base64 图片数据解码并保存到 images 文件夹
-     */
     private String saveBase64ToFile(String base64Data) {
         try {
-            // 解析 base64 数据: data:image/png;base64,xxxxx
             String[] parts = base64Data.split(",", 2);
             if (parts.length != 2) return null;
             
-            String mimeType = parts[0]; // data:image/png;base64
+            String mimeType = parts[0];
             String base64 = parts[1];
             
-            // 从 mimeType 提取扩展名
             String extension = ".png";
             if (mimeType.contains("jpeg") || mimeType.contains("jpg")) {
                 extension = ".jpg";
@@ -137,41 +130,42 @@ public class SubmissionService {
             return submissionRepository.searchByKeyword(keyword, pageable);
         }
         
-        if (city != null && !city.trim().isEmpty() && status != null && !status.trim().isEmpty()) {
-            return submissionRepository.findByStatusAndSelectedCityOrderByCreatedAtDesc(status, city, pageable);
-        }
-        
-        if (city != null && !city.trim().isEmpty()) {
-            return submissionRepository.findBySelectedCityOrderByCreatedAtDesc(city, pageable);
-        }
-        
-        if (status != null && !status.trim().isEmpty()) {
-            return submissionRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
-        }
-        
-        return submissionRepository.findAllByOrderByCreatedAtDesc(pageable);
+        return submissionRepository.findByFilters(status, city, pageable);
     }
     
-    public Submission getDetail(String id) {
+    public Submission getDetail(Long id) {
         return submissionRepository.findById(id).orElse(null);
     }
     
     @Transactional
     public void updateStatus(StatusUpdateRequest request) {
-        Submission submission = submissionRepository.findById(request.getId())
-            .orElseThrow(() -> new RuntimeException("Submission not found"));
-        
-        if (request.getStatus() != null) {
-            submission.setStatus(request.getStatus());
+        if (request.getIds() != null && request.getIds().size() > 1) {
+            // Batch update
+            String note = request.getNote() != null ? request.getNote() : "";
+            int updated = submissionRepository.batchUpdateStatus(request.getIds(), request.getStatus(), note);
+            if (updated == 0) {
+                throw new RuntimeException("未找到匹配的记录");
+            }
+        } else {
+            // Single update
+            Long id = request.getIds() != null && !request.getIds().isEmpty() 
+                ? request.getIds().get(0) 
+                : request.getId();
+            Submission submission = submissionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Submission not found"));
+            
+            if (request.getStatus() != null) {
+                submission.setStatus(request.getStatus());
+            }
+            if (request.getNote() != null) {
+                submission.setNote(request.getNote());
+            }
+            if (request.getRewardAmount() != null) {
+                submission.setRewardAmount(request.getRewardAmount());
+            }
+            
+            submissionRepository.save(submission);
         }
-        if (request.getNote() != null) {
-            submission.setNote(request.getNote());
-        }
-        if (request.getRewardAmount() != null) {
-            submission.setRewardAmount(request.getRewardAmount());
-        }
-        
-        submissionRepository.save(submission);
     }
     
     public Map<String, Object> getStats() {
@@ -200,7 +194,7 @@ public class SubmissionService {
     }
     
     @Transactional
-    public boolean togglePin(String id) {
+    public boolean togglePin(Long id) {
         Submission submission = submissionRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Submission not found"));
         
@@ -221,12 +215,12 @@ public class SubmissionService {
     }
     
     @Transactional
-    public void delete(String id) {
+    public void delete(Long id) {
         submissionRepository.deleteById(id);
     }
     
     @Transactional
-    public void deleteByUser(String id) {
+    public void deleteByUser(Long id) {
         Submission submission = submissionRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("记录不存在"));
         
@@ -235,5 +229,15 @@ public class SubmissionService {
         }
         
         submissionRepository.deleteById(id);
+    }
+    
+    @Transactional
+    public int batchDelete(List<Long> ids) {
+        return submissionRepository.batchDelete(ids);
+    }
+    
+    @Transactional
+    public int batchUpdateStatus(List<Long> ids, String status, String note) {
+        return submissionRepository.batchUpdateStatus(ids, status, note);
     }
 }

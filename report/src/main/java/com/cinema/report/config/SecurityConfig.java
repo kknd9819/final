@@ -22,7 +22,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/submit", "/api/upload", "/api/login", "/api/geocode").permitAll()
+                .requestMatchers("/api/submit", "/api/upload", "/api/login", "/api/geocode", "/api/delete-by-user", "/api/batch-delete", "/api/batch-status").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 .requestMatchers("/", "/admin/login", "/admin.html").permitAll()
                 .requestMatchers("/admin/**").authenticated()

@@ -58,7 +58,9 @@ public class GeocodeService {
             
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             
-            return objectMapper.readValue(response.body(), Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = objectMapper.readValue(response.body(), Map.class);
+            return result;
         } catch (Exception e) {
             Map<String, Object> errorResult = new HashMap<>();
             errorResult.put("status", "0");

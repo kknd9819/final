@@ -33,6 +33,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (path.startsWith("/api/submit") || 
             path.startsWith("/api/upload") || 
             path.startsWith("/api/delete-by-user") ||
+            path.startsWith("/api/batch-delete") ||
+            path.startsWith("/api/batch-status") ||
             path.startsWith("/api/login") ||
             path.startsWith("/api/geocode") ||
             path.startsWith("/css/") ||
