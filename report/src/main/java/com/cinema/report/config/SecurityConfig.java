@@ -19,16 +19,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/submit", "/api/upload", "/api/login", "/api/geocode", "/api/history").permitAll()
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                .requestMatchers("/", "/admin/login", "/admin.html").permitAll()
-                .requestMatchers("/admin/**").authenticated()
-                .requestMatchers("/api/**").authenticated()
+            .csrf().disable()
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
+            .authorizeRequests()
+                .antMatchers("/api/submit", "/api/upload", "/api/login", "/api/geocode", "/api/history").permitAll()
+                .antMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                .antMatchers("/", "/admin/login", "/admin.html").permitAll()
+                .antMatchers("/admin/**").authenticated()
+                .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
-            )
+            .and()
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         
         return http.build();

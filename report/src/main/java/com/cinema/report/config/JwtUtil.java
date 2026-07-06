@@ -2,6 +2,7 @@ package com.cinema.report.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -28,19 +29,19 @@ public class JwtUtil {
         Date expiryDate = new Date(now.getTime() + expiration);
         
         return Jwts.builder()
-            .subject(username)
-            .issuedAt(now)
-            .expiration(expiryDate)
-            .signWith(getSigningKey())
+            .setSubject(username)
+            .setIssuedAt(now)
+            .setExpiration(expiryDate)
+            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
             .compact();
     }
     
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                .verifyWith(getSigningKey())
+            Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
                 .build()
-                .parseSignedClaims(token);
+                .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
             return false;
@@ -48,11 +49,11 @@ public class JwtUtil {
     }
     
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
-            .verifyWith(getSigningKey())
+        Claims claims = Jwts.parserBuilder()
+            .setSigningKey(getSigningKey())
             .build()
-            .parseSignedClaims(token)
-            .getPayload();
+            .parseClaimsJws(token)
+            .getBody();
         
         return claims.getSubject();
     }

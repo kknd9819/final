@@ -3,8 +3,8 @@ package com.cinema.report.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.AttributeConverter;
-import jakarta.persistence.Converter;
+import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import java.util.Map;
 public class JsonStringMapConverter implements AttributeConverter<Map<String, String>, String> {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final TypeReference<Map<String, String>> TYPE_REF = new TypeReference<>() {};
+    private static final TypeReference<Map<String, String>> TYPE_REF = new TypeReference<Map<String, String>>() {};
 
     @Override
     public String convertToDatabaseColumn(Map<String, String> attribute) {

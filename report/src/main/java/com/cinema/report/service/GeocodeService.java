@@ -6,10 +6,10 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +24,6 @@ public class GeocodeService {
     @Value("${app.amap.secret}")
     private String amapSecret;
     
-    private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     public Map<String, Object> geocode(double lat, double lng) {
@@ -42,7 +41,7 @@ public class GeocodeService {
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 urlBuilder.append(entry.getKey())
                     .append("=")
-                    .append(java.net.URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
+                    .append(java.net.URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.name()))
                     .append("&");
             }
             
@@ -51,14 +50,28 @@ public class GeocodeService {
                 url = url.substring(0, url.length() - 1);
             }
             
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .GET()
-                .build();
+            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
             
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            int responseCode = connection.getResponseCode();
+            BufferedReader reader;
+            if (responseCode >= 200 && responseCode < 300) {
+                reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+            } else {
+                reader = new BufferedReader(new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8));
+            }
             
-            return objectMapper.readValue(response.body(), Map.class);
+            StringBuilder responseBody = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                responseBody.append(line);
+            }
+            reader.close();
+            connection.disconnect();
+            
+            return objectMapper.readValue(responseBody.toString(), Map.class);
         } catch (Exception e) {
             Map<String, Object> errorResult = new HashMap<>();
             errorResult.put("status", "0");

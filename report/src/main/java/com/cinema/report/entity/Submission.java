@@ -3,7 +3,7 @@ package com.cinema.report.entity;
 import com.cinema.report.config.JsonListConverter;
 import com.cinema.report.config.JsonObjectMapConverter;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
