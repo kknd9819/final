@@ -6,9 +6,8 @@ import {
   Plus,
   Building, 
   Check, 
-  ChevronRight, 
-  ChevronLeft, 
-  ShieldAlert, 
+  ChevronRight,
+  ChevronLeft,
   AlertCircle,
   FileSpreadsheet,
   ChevronDown,
@@ -1112,10 +1111,9 @@ export default function App() {
             : 'bg-white border-b border-gray-200'
         }`}>
         <div className="flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-blue-600 flex-shrink-0" />
           <h1 className={`text-lg font-semibold tracking-tight select-none transition-colors duration-300 ${
             darkMode ? 'text-gray-100' : 'text-gray-900'
-          }`}>影院安全隐患举报</h1>
+          }`}>影院安全隐患有奖举报</h1>
         </div>
 
         <div className="hidden sm:block flex-1 max-w-md mx-8">
@@ -1240,19 +1238,13 @@ export default function App() {
           >
             <div className="p-8 md:p-12 text-center">
               <div className="flex items-center justify-center gap-4 mb-6">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transform -rotate-3 transition-colors duration-300 ${
-                  darkMode ? 'bg-blue-900/50 text-blue-400' : 'bg-blue-50 text-blue-600'
-                }`}>
-                  <ShieldAlert className="w-8 h-8" />
-                </div>
-                <div className="text-left">
-                  <div className="text-lg font-semibold text-blue-600">湖南省电影局</div>
-                  <div className="text-lg font-medium text-blue-600">湖南省电影行业协会</div>
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-blue-600">湖南省电影局  湖南省电影行业协会</div>
                 </div>
               </div>
               <h1 className={`text-3xl font-bold mb-4 tracking-tight transition-colors duration-300 ${
                 darkMode ? 'text-gray-100' : 'text-gray-900'
-              }`}>影院安全隐患举报</h1>
+              }`}>影院安全隐患有奖举报</h1>
               <p className={`leading-relaxed max-w-lg mx-auto mb-8 transition-colors duration-300 ${
                 darkMode ? 'text-gray-400' : 'text-gray-500'
               }`}>
@@ -1511,10 +1503,10 @@ export default function App() {
               <div className="mb-8">
                 <h2 className={`text-2xl font-bold transition-colors duration-300 ${
                   darkMode ? 'text-gray-100' : 'text-gray-900'
-                }`}>对照核验并录入隐患</h2>
+                }`}>请选择您要举报的安全隐患</h2>
                 <p className={`mt-2 text-sm transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-500'
-                }`}>核验单列表，勾选符合现场实际情况的问题条目。</p>
+                }`}>请勾选符合现场实际情况的隐患条目。</p>
               </div>
 
               <div className="space-y-4">
