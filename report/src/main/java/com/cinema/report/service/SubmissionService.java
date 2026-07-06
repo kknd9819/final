@@ -156,7 +156,7 @@ public class SubmissionService {
         return submissionRepository.findAllByOrderByIdDesc(pageable);
     }
 
-    public Submission getDetail(String id) {
+    public Submission getDetail(Long id) {
         return submissionRepository.findById(id).orElse(null);
     }
 
@@ -205,7 +205,7 @@ public class SubmissionService {
 
     @Transactional
     public boolean togglePin(String id) {
-        Submission submission = submissionRepository.findById(id)
+        Submission submission = submissionRepository.findById(Long.valueOf(id))
                 .orElseThrow(() -> new RuntimeException("Submission not found"));
 
         List<Submission> pinnedSubmissions = submissionRepository.findByIsPinnedTrue();
@@ -226,19 +226,19 @@ public class SubmissionService {
 
     @Transactional
     public void delete(String id) {
-        submissionRepository.deleteById(id);
+        submissionRepository.deleteById(Long.valueOf(id));
     }
 
     @Transactional
     public void deleteByUser(String id) {
-        Submission submission = submissionRepository.findById(id)
+        Submission submission = submissionRepository.findById(Long.valueOf(id))
                 .orElseThrow(() -> new RuntimeException("记录不存在"));
 
         if (!"pending".equals(submission.getStatus())) {
             throw new RuntimeException("该记录已被管理员处理，无法删除");
         }
 
-        submissionRepository.deleteById(id);
+        submissionRepository.deleteById(Long.valueOf(id));
     }
 
     @Transactional(readOnly = true)

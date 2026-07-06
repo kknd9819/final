@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface SubmissionRepository extends JpaRepository<Submission, String> {
+public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     
     List<Submission> findByReporterPhoneOrderByIdDesc(String reporterPhone);
     

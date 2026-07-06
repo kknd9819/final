@@ -150,7 +150,7 @@ public class ApiController {
     }
     
     @GetMapping("/detail")
-    public ResponseEntity<?> detail(@RequestParam("id") String id) {
+    public ResponseEntity<?> detail(@RequestParam("id") Long id) {
         Submission submission = submissionService.getDetail(id);
         if (submission != null) {
             return ResponseEntity.ok(submission);
