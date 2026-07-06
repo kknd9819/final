@@ -64,7 +64,7 @@ export const HAZARDS_DEFINITIONS: HazardDefinition[] = [
   {
     id: 13,
     label: '未经审批审核的搭建加层',
-    details: '在影院大厅内、夹层中违规擅自进行违章扩建、乱搭铁皮房或违章加高二层。',
+    details: '在影院范围内，违规违章进行扩建、搭建或加层。',
     category: '建筑安全'
   },
   // ===== 食品安全（食品部分） =====
@@ -77,13 +77,13 @@ export const HAZARDS_DEFINITIONS: HazardDefinition[] = [
   {
     id: 14,
     label: '售卖过期、变质食品',
-    details: '影院卖品区售卖超过保质期或已变质的食品、饮料，危害消费者健康。',
+    details: '影院卖品区售卖超过保质期或已变质的食品、饮料。',
     category: '食品安全'
   },
   {
     id: 15,
     label: '未办理食品经营相关证照',
-    details: '影院卖品区未办理食品经营许可证、卫生许可证，或工作人员未持有有效健康证。',
+    details: '影院未办理食品经营许可证、卫生许可证，或工作人员未持有有效健康证。',
     category: '食品安全'
   }
 ];
