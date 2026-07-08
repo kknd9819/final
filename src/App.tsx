@@ -1239,7 +1239,8 @@ export default function App() {
             <div className="p-8 md:p-12 text-center">
               <div className="flex items-center justify-center gap-4 mb-6">
                 <div className="text-center">
-                  <div className="text-lg font-semibold text-blue-600">湖南省电影局  湖南省电影行业协会</div>
+                  <div className="text-lg font-semibold text-blue-600">湖南省电影局</div>
+                  <div className="text-lg font-semibold text-blue-600">湖南省电影行业协会</div>
                 </div>
               </div>
               <h1 className={`text-3xl font-bold mb-4 tracking-tight transition-colors duration-300 ${

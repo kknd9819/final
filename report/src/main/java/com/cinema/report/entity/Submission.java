@@ -17,10 +17,8 @@ import java.util.Map;
 @Getter
 @Setter
 @Table(name = "submissions", indexes = {
-    @Index(name = "idx_status", columnList = "status"),
-    @Index(name = "idx_selected_city", columnList = "selected_city"),
-    @Index(name = "idx_created_at", columnList = "created_at"),
-    @Index(name = "idx_is_pinned", columnList = "is_pinned")
+    @Index(name = "idx_status_city", columnList = "status, selected_city"),
+    @Index(name = "idx_reporter_phone", columnList = "reporter_phone")
 })
 public class Submission {
     
