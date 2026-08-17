@@ -33,6 +33,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
            "LOWER(s.cinemaName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(s.selectedCity) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(s.selectedCounty) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "LOWER(s.reportPhone) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "ORDER BY s.id DESC")
     Page<Submission> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
     
