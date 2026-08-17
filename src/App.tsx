@@ -765,30 +765,81 @@ export default function App() {
     // Sum all hazard photos
     (Object.values(state.hazards) as { checked: boolean; photos: UploadedPhoto[] }[]).forEach(h => {
       h.photos.forEach(p => {
-        // base64 data URL size ≈ (base64_length * 3/4) bytes
-        if (p.url) total += Math.round(p.url.length * 0.75);
+        // 按上传时记录的实际字节数 sizeBytes 累加；旧草稿 base64 照片无 sizeBytes 时回退估算（base64 长度 × 0.75）
+        total += p.sizeBytes ?? Math.round(p.url ? p.url.length * 0.75 : 0);
       });
     });
     // Sum others photos
     state.othersPhotos.forEach(p => {
-      if (p.url) total += Math.round(p.url.length * 0.75);
+      // 旧草稿 base64 照片无 sizeBytes 时回退估算
+      total += p.sizeBytes ?? Math.round(p.url ? p.url.length * 0.75 : 0);
     });
     return total;
+  };
+
+  /**
+   * 上传前用 canvas 压缩 JPEG 图片：长边超过 1920px 时等比缩放到 1920，输出 JPEG（quality 0.8）。
+   * 仅压缩 image/jpeg：PNG/GIF 可能含透明区域，统一转 JPEG 会使透明背景变黑，
+   * 因此选择只对 JPEG 压缩，其他格式原文件上传；长边不超过 1920 的图片不压缩不放大。
+   * 压缩失败或结果不比原文件小时，降级使用原文件上传。
+   */
+  const compressImage = async (file: File): Promise<File> => {
+    if (file.type !== 'image/jpeg') return file;
+    let objectUrl = '';
+    try {
+      objectUrl = URL.createObjectURL(file);
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('图片加载失败'));
+        image.src = objectUrl;
+      });
+      const MAX_EDGE = 1920;
+      const longEdge = Math.max(img.width, img.height);
+      if (longEdge <= MAX_EDGE) {
+        return file; // 低于阈值：不压缩不放大，直接上传原文件
+      }
+      const scale = MAX_EDGE / longEdge;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return file;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+      if (!blob || blob.size >= file.size) return file; // 压缩失败或未变小，降级原文件
+      // 保持 jpg 后缀：原文件名非 .jpg/.jpeg 时将后缀改为 .jpg
+      const jpgName = /\.(jpe?g)$/i.test(file.name)
+        ? file.name
+        : file.name.replace(/\.[^.]*$/, '') + '.jpg';
+      return new File([blob], jpgName, { type: 'image/jpeg' });
+    } catch (e) {
+      console.warn('图片压缩失败，降级使用原文件上传:', e);
+      return file;
+    } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    }
   };
 
   const handleImageUpload = async (id: number | 'others', files: FileList | null) => {
     if (!files) return;
     
     const MAX_TOTAL_BYTES = 10 * 1024 * 1024; // 10MB
-    const currentTotal = getTotalPhotoSize();
+    // 循环内滚动累计（每成功上传一张后累加），避免循环外快照导致多选文件不累加
+    let runningTotal = getTotalPhotoSize();
     
     for (const file of Array.from(files)) {
       if (!file.type.startsWith('image/')) {
         setToastMessage('抱歉，只支持上传各类图像照片文件。');
         continue;
       }
-      if (currentTotal + file.size > MAX_TOTAL_BYTES) {
-        const remaining = MAX_TOTAL_BYTES - currentTotal;
+
+      // 先压缩图片，再做总量判定（仅压缩 JPEG，失败时降级为原文件）：压缩后会远小于限额的大图不应被原始体积误拒
+      const fileToUpload = await compressImage(file);
+
+      // 总量守卫：基于压缩后体积与循环内滚动累计值判定
+      if (runningTotal + fileToUpload.size > MAX_TOTAL_BYTES) {
+        const remaining = MAX_TOTAL_BYTES - runningTotal;
         if (remaining <= 0) {
           setToastMessage('⚠️ 所有照片总大小已超过10MB限制，请先删除部分照片再上传');
         } else {
@@ -796,11 +847,11 @@ export default function App() {
         }
         continue;
       }
-      
+
       try {
         // 先上传到服务器
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', fileToUpload);
         
         const uploadUrl = API_BASE ? `${API_BASE}/api/upload` : '/api/upload';
         const response = await fetchWithTimeout(uploadUrl, {
@@ -826,19 +877,20 @@ export default function App() {
           const base64data = await new Promise<string>((resolve, reject) => {
             reader.onloadend = () => resolve(reader.result as string);
             reader.onerror = reject;
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(fileToUpload);
           });
           photoUrl = base64data;
         }
         
         const uniqueId = Math.random().toString(36).substring(2, 9);
-        const sizeStr = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+        const sizeStr = (fileToUpload.size / (1024 * 1024)).toFixed(1) + ' MB';
         
         const photo: UploadedPhoto = {
           id: uniqueId,
-          name: file.name,
+          name: fileToUpload.name,
           url: photoUrl,
-          size: sizeStr
+          size: sizeStr,
+          sizeBytes: fileToUpload.size // 记录实际上传字节数，供总量守卫累加
         };
         
         if (id === 'others') {
@@ -861,6 +913,8 @@ export default function App() {
             };
           });
         }
+        // 上传成功，滚动累计实际上传字节数
+        runningTotal += fileToUpload.size;
         setToastMessage('📷 照片上传成功');
       } catch (error) {
         console.error('Upload error:', error);
@@ -1008,6 +1062,13 @@ export default function App() {
     setSubmitting(true);
     
     try {
+      // 为每个隐患附加 label，便于后台详情直接展示隐患名称
+      const hazardsWithLabels: { [key: number]: { checked: boolean; photos: UploadedPhoto[]; label: string } } = {};
+      (Object.entries(state.hazards) as [string, { checked: boolean; photos: UploadedPhoto[] }][]).forEach(([key, val]) => {
+        const def = HAZARDS_DEFINITIONS.find(d => String(d.id) === key);
+        hazardsWithLabels[Number(key)] = { ...val, label: def ? def.label : '' };
+      });
+
       // 构建提交数据，只发送必要的字段
       const payload = {
         reporterName: state.reporterName,
@@ -1016,7 +1077,7 @@ export default function App() {
         selectedCity: state.selectedCity,
         selectedCounty: state.selectedCounty,
         cinemaName: state.cinemaName,
-        hazards: state.hazards,
+        hazards: hazardsWithLabels,
         othersText: state.othersText,
         photos: [] as { url: string }[],
         othersPhotos: state.othersPhotos.map(p => ({ url: p.url })),

@@ -13,6 +13,7 @@ export interface UploadedPhoto {
   name: string; // filename
   url: string; // data URL or mock temp URL
   size: string; // formatted size (e.g. "1.2 MB")
+  sizeBytes?: number; // 上传文件的实际字节数（压缩后），用于总量守卫
 }
 
 export interface SurveyState {

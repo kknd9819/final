@@ -398,6 +398,21 @@ function previewImage(src) {
 
 function renderDetail(data) {
   var container = document.getElementById('detailContent');
+  // 隐患 ID -> 名称兜底映射（与前端 questions.ts 的 HAZARDS_DEFINITIONS 保持一致，用于展示未携带 label 的历史数据）
+  var HAZARD_LABELS = {
+  '5': '安全指示牌（应急灯）隐患',
+  '6': '安全出口安全隐患',
+  '7': '消防灭火器材隐患',
+  '8': '防火卷帘遮挡隐患',
+  '9': '用电安全隐患',
+  '10': '违规使用局部取暖设备',
+  '11': '卖品区卫生环境差',
+  '12': '改变房屋主体物理结构',
+  '13': '未经审批审核的搭建加层',
+  '14': '售卖过期、变质食品',
+  '15': '未办理食品经营相关证照',
+  '16': '吸烟行为与禁烟警示缺失'
+};
   var hazards = parseJsonField(data.hazards, {});
   var checkedHazards = [];
   if (typeof hazards === 'object' && !Array.isArray(hazards)) {
@@ -405,7 +420,7 @@ function renderDetail(data) {
   }
   var esc = function(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g, "&#39;").replace(/"/g, "&quot;"); };
   var hazardsHtml = '';
-  if (checkedHazards.length > 0) hazardsHtml = checkedHazards.map(function(e) { return '<div class="hazard-item">✅ 隐患 #' + esc(e[0]) + '</div>'; }).join('');
+  if (checkedHazards.length > 0) hazardsHtml = checkedHazards.map(function(e) { var label = e[1] && e[1].label ? e[1].label : (Object.prototype.hasOwnProperty.call(HAZARD_LABELS, e[0]) ? HAZARD_LABELS[e[0]] : ('隐患 #' + e[0])); return '<div class="hazard-item">✅ ' + esc(label) + '</div>'; }).join('');
   if (data.othersText) hazardsHtml += '<div class="hazard-item">📝 备注：' + esc(data.othersText) + '</div>';
 
   var photos = photosToUrlArray(data.photos);
